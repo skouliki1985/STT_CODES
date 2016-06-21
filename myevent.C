@@ -39,7 +39,8 @@ void myevent::Loop()						//START OF THE LOOP FUNCTION -->LOOP()
     double totchannel[150];
     int channel[150];
     int channelhit[150];
-    double reftime = 0.0,drifttimes = 0.0,tottimes = 0.0,drifttimes1 = 0.0,tottimes1 = 0.0,binMaxContent = 0.0,threshold = 0.0;
+    double reftime,drifttimes,tottimes,drifttimes1,tottimes1;
+    double binMaxContent = 0.0,threshold = 0.0;
     int xbin = 0,binMax = 0;
     int savedata = 1;
     int eventhits,it;
@@ -154,6 +155,10 @@ void myevent::Loop()						//START OF THE LOOP FUNCTION -->LOOP()
             continue;
         }
         
+        for (int i = 0; i < 150; i++){
+            totCorrection[i] = mean[i] - mean[130];
+        }
+    
         projX_t0 = t0_vs_chan_multi_1 -> ProjectionX("_px",i,i);
         binMax = projX_t0 -> GetMaximumBin();
         binMaxContent = projX_t0 -> GetBinContent(binMax);
@@ -163,7 +168,7 @@ void myevent::Loop()						//START OF THE LOOP FUNCTION -->LOOP()
         
     }
     
-    if (savedata ==1)
+    if (savedata ==1)               ////save correction file for drift times
     {
         fstream out_t0Correction ("out_t0Correction_0.55GeV_dabc16117205401.txt", ofstream::out);
         for (int i = 0; i < 150; i++){
@@ -172,11 +177,8 @@ void myevent::Loop()						//START OF THE LOOP FUNCTION -->LOOP()
         out_t0Correction.close();
     }
     
-    for (int i = 0; i < 150; i++){
-        totCorrection[i] = mean[i] - mean[130];
-    }
     
-    if (savedata ==1)
+    if (savedata ==1)           ////save correction file for tot times times
     {
         fstream out_totCorrection ("out_totCorrection_0.55GeV_dabc16117205401.txt", ofstream::out);
         for (int i = 0; i < 150; i++){
@@ -203,8 +205,13 @@ void myevent::Loop()						//START OF THE LOOP FUNCTION -->LOOP()
     myfile->Close();
 }											//END OF THE LOOP FUNCTION -->LOOP()
 
+
+
 void myevent::Correction()						//START OF THE CORRECTION FUNCTION -->CORRECTION()
 {
+    
+    // ******************************************************* variables and arrays ********************************************
+
     int eventhits2,it,it1;
     double xposition2[150],yposition2[150],t02[150],t0channel2[150],tot2[150],totchannel2[150];
     double totCorrection2[150] = {0.};
@@ -219,12 +226,8 @@ void myevent::Correction()						//START OF THE CORRECTION FUNCTION -->CORRECTION
         0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,
         0,1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35,37,39,41,43,45,47};
     
-    
-    
-    // stream files
-    ifstream totCorrectionData;
-    ifstream t0CorrectionData;
-    
+    // ******************************************************* histograms ********************************************************
+
     TH1D* hits_per_channel = new TH1D ("hits_per_channel","hits_per_channel",150, 0., 150.);
     TH2D* t0_vs_chan_corr = new TH2D("t0_vs_chan_corr","t0 vs channel 1st hits corr", 160,-50.,270.,150,0.,150.);
     TH2D* tot_vs_chan_corr = new TH2D("tot_vs_chan_corr","tot vs channel 1st hits corr",300,150.,450.,150,0.,150.);
@@ -257,6 +260,11 @@ void myevent::Correction()						//START OF THE CORRECTION FUNCTION -->CORRECTION
     tree -> Branch("row2",row2,"row2[150]/I");
     tree -> Branch("column2",column2,"column2[150]/I");
     
+    // stream files
+    ifstream totCorrectionData;
+    ifstream t0CorrectionData;
+
+    
     // **********************************************************************************************************
     
     int nentries = readtree ->GetEntriesFast();
@@ -286,7 +294,7 @@ void myevent::Correction()						//START OF THE CORRECTION FUNCTION -->CORRECTION
     for (int jentry=0; jentry<nentries; jentry++) {         ////start of for loop for events
         readtree -> GetEntry(jentry);
         
-        for (int i = 0; i < 150; i++){
+        for (int i = 0; i < 150; i++){      /// set arrays equal to 0
             row2[i] = 0;
             column2[i] = 0;
             yposition2[i] = 0.0;
@@ -344,10 +352,7 @@ void myevent::Correction()						//START OF THE CORRECTION FUNCTION -->CORRECTION
                     } //if channel is element of the strawmap
                 } // columns for loop
             } //rows for loop
-            //if(t02[i] < 0.0) t02[i] = 1.0;
             if(t02[i] >=0.0 && t02[i]<= 160.0) it1++;
-            //if(t02[i] >=0.0 && t02[i]<= 160.0) tree->Fill();;
-
         } ///end for loop for hits
         if(it1 > 7 && it1 < 41) tree->Fill();
     } ////end for loop for events
@@ -356,7 +361,7 @@ void myevent::Correction()						//START OF THE CORRECTION FUNCTION -->CORRECTION
     double N = 0.0, Ni = 0.0, SumNi = 0.0, wuv = 0.0;				////in meters
     double Riso=0.0, Ra = 0.00505, Rwire = 0.00001, Ravalanch = 0.00010;  ////in meters
     
-    // here we plot all the t0 of all channels so that we can do the Riso calculation
+    // ******************************* Riso calculation ***********************************************
     for (int i = 0; i < 150 ; i++){
         t0_allchan_calibration -> Add(t0_vs_chan_corr -> ProjectionX("_px",i,i));
     }
@@ -369,7 +374,6 @@ void myevent::Correction()						//START OF THE CORRECTION FUNCTION -->CORRECTION
         t0_allchan_calibration_new -> SetBinContent(i, wuv);
         N += wuv;
     }
-    // Callibration curve drift time vs Isochrone radius
     for(int i = 0; i < 81; i++){
         Ni = t0_allchan_calibration_new -> GetBinContent(i);
         SumNi += Ni;
@@ -387,9 +391,8 @@ void myevent::Correction()						//START OF THE CORRECTION FUNCTION -->CORRECTION
     }
     out_Riso.close();
     
-    
-    
-    
+    //**************************** WRITING HISTOGRAMS ****************************
+
     hits_per_channel->Write();
     map1->Write();
     map2->Write();
@@ -400,6 +403,8 @@ void myevent::Correction()						//START OF THE CORRECTION FUNCTION -->CORRECTION
     t0_allchan_calibration->Write();
     t0_allchan_calibration_new->Write();
     
+    //************************* WRITING ROOT FILE AND CLOSING ********************
+
     myfile -> Write();
     myfile -> Close();
     

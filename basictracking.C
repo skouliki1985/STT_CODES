@@ -38,8 +38,8 @@ TString filename2 = stra+strd+strb;                         //file which will co
 
 // ***************** GLOBAL VARIABLES ********************************
 int eventhits3= 0;
-double newparam0 = 0.0,newparam1 = 0.0,dnewparam0 = 0.0,dnewparam1 = 0.0;
-double chisq = 9999.0,result = 9999.0;
+double newparam0,newparam1,dnewparam0,dnewparam1;
+double chisq = -9999.0,result = -9999.0;
 double Riso[150],sigma[150],xpos[150],ypos[150];
 
 
@@ -55,16 +55,15 @@ double* line(double& x1, double& x2,double& y1,double& y2);
 void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!!!!!!!!
 {
     // ***************** VARIABLES, ARRAYS, ARCS, STRINGS ********************************
-    int neweventhits3,it,firstiter,seconditer,test;
+    int neweventhits3,it,firstiter,seconditer;
     double prob,chanDis,residual,sumchanDis,sumresid,chanDis2,residual2,sumchanDis2,sumresid2,perpYIntercept,perpSlope,hitPosX,hitPosY,alpha,totsum,dxsum;
     int channel3[150],channelhit3[150],row3[150],column3[150];              // number of channels
     double xposition3[150],yposition3[150],t03[150],t0channel3[150],tot3[150],totchannel3[150],dx[150],newxpos[150],newypos[150],newradius[150];
     double prefitPointX[4],prefitPointY[4],slope[4],yIntercept[4],kSquared[4];
     double polParam[5] = {0.};
-    double dslope = 0.002, dyIntercept = 0.002;
+    double dslope = 0.0001, dyIntercept = 0.0001;
     double* aa;
     
-    gStyle->SetFuncWidth(1);
     
     
     
@@ -79,23 +78,20 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     TH1D* totoverdx = new TH1D("totoverdx","totoverdx",1000,0.0,100.);
     TH2D* residual_vs_r_1 = new TH2D("residual_vs_r_1","residual_vs_r_1",1000,-2.,2.,510,0.,5.1); ///in mm
     TH2D* residual_vs_r_2 = new TH2D("residual_vs_r_2","residual_vs_r_2",1000,-2.,2.,510,0.,5.1); ///in mm
-    TH2D* t0_vs_iso = new TH2D("t0_vs_iso","t0_vs_iso",165,0.,165.,1100, -0.0055,0.0055);  ///in m
-    TH2D* t0_vs_iso2 = new TH2D("t0_vs_iso2","t0_vs_iso2",165,0.,165.,550, 0.,0.0055);      ///in m
-    TH1D* resid1 = new TH1D("resid1","resid1",1000,-0.001,0.001); // in m
-    TH1D* resid2 = new TH1D("resid2","resid2",1000,-0.001,0.001); // in m
-    TH1D* resid3 = new TH1D("resid3","resid3",1000,-0.001,0.001); // in m
-    TH1D* resid4 = new TH1D("resid4","resid4",1000,-0.001,0.001); // in m
-    TH1D* resid5 = new TH1D("resid5","resid5",1000,-0.001,0.001); // in m
-    TH1D* resid6 = new TH1D("resid6","resid6",1000,-0.001,0.001); // in m
-    TH1D* resid7 = new TH1D("resid7","resid7",1000,-0.001,0.001); // in m
-    TH1D* resid8 = new TH1D("resid8","resid8",1000,-0.001,0.001); // in m
-    TH1D* resid9 = new TH1D("resid9","resid9",1000,-0.001,0.001); // in m
-    TH1D* resid10 = new TH1D("resid10","resid10",1000,-0.001,0.001); // in m
+    TH2D* t0_vs_iso = new TH2D("t0_vs_iso","t0_vs_iso",165,0.,165.,1100, -0.0055,0.0055);  ///in meters
+    TH2D* t0_vs_iso2 = new TH2D("t0_vs_iso2","t0_vs_iso2",165,0.,165.,550, 0.,0.0055);      ///in meters
+    TH1D* resid1 = new TH1D("resid1","resid1",1000,-0.001,0.001); // in meters
+    TH1D* resid2 = new TH1D("resid2","resid2",1000,-0.001,0.001); // in meters
+    TH1D* resid3 = new TH1D("resid3","resid3",1000,-0.001,0.001); // in meters
+    TH1D* resid4 = new TH1D("resid4","resid4",1000,-0.001,0.001); // in meters
+    TH1D* resid5 = new TH1D("resid5","resid5",1000,-0.001,0.001); // in meters
+    TH1D* resid6 = new TH1D("resid6","resid6",1000,-0.001,0.001); // in meters
+    TH1D* resid7 = new TH1D("resid7","resid7",1000,-0.001,0.001); // in meters
+    TH1D* resid8 = new TH1D("resid8","resid8",1000,-0.001,0.001); // in meters
+    TH1D* resid9 = new TH1D("resid9","resid9",1000,-0.001,0.001); // in meters
+    TH1D* resid10 = new TH1D("resid10","resid10",1000,-0.001,0.001); // in meters
     TH1D* iso_error = new TH1D("iso_error","iso_error",10,0.,5.);
     TH1D* resid_per_channel[150] = {0};         /////in mm
-    
-    
-    
     
     
     TF1* finalfit = new TF1("finalfit","pol4");
@@ -113,15 +109,13 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     el2->SetFillStyle(3000);
     TString a;
     TString Name;
+    gStyle->SetFuncWidth(1);
+    //gStyle->SetOptStat(0);
     
-    for (int i = 0; i< 150; i++) {     ///// set arrays equal to zero
+    for (int i = 0; i< 150; i++) {
         Name.Form(" Residual of channel %d " ,i);
         resid_per_channel[i] = new TH1D(Name,Name,1000,-1.0,1.0);
     }
-    
-    
-    //gStyle->SetOptStat(0);
-    
     
     ifstream polParamData;							     	//declare stream
     polParamData.open("out_Riso_0.55GeV_dabc16117205401.txt");				//open riso txt file
@@ -164,19 +158,15 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     
     
     cout << "  There are  " << nentries << " entries in this file....... " << endl;
-    //    c1->Print("event_display.pdf["); // ---------------> START OF THE PDF FILE !!!!!!!!!!!!!!!!!!!
-    for (int lm = 0; lm < nentries; lm++) { 					////// start of big for loop for events !!!!!!
+    //    c1->Print("event_display.pdf["); // ---------------> CREATION OF THE PDF FILE FOR THE VISUALIZATION OF THE TRACKS !!!!!!!!!!!!!!!!!!!
+    for (int lm = 0; lm < nentries; lm++) { 					////// START OF BIG FOR LOOP FOR EVENTS !!!!!!
         readtree -> GetEntry(lm);
         if (lm % 50000 == 0) cout << " ==> " << lm << " events processed........ " << endl;
         if (a != "a"){
             cout << "Do you want to see the next event ? (y , n , a)" << endl;
             cin >> a;
         }
-        
-        
-        
-        
-        
+
         for (int i = 0; i< 150; i++) {     ///// set arrays equal to zero
             Riso[i] = 0.0;
             sigma[i] = 0.0;
@@ -195,42 +185,36 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
             yIntercept[i] = 0.0;
         }
         
-        
-        
         neweventhits3 = eventhits3;             ///set eventhits3 to neweventhits3
         
-        //        cout << " first eventhits3 is " << neweventhits3 << endl;
-        
         if(a =="y" || a == "a"){    //// start of the if a || y statement !!!!!!!!!!!!!!!
-            //            cout << " ******* ---------------------> start of event " << lm << " !!!!!!!!!!! " << endl;
             plot->Draw();
-            for(int i = 0; i < eventhits3; i++){
-                t03[i] = t03[i] - 7.0;
-                Riso[i] = (polParam[0]+(polParam[1]*t03[i])+(polParam[2]*pow(t03[i],2))+(polParam[3]*pow(t03[i],3))+(polParam[4]*pow(t03[i],4)));///////riso is in meters!!!!!!!!!
-                //Riso[i] = (-8.19526e-06+(5.52853e-05*t03[i])+(7.56188e-08*pow(t03[i],2))+(-3.31433e-09*pow(t03[i],3))+(1.28182e-11*pow(t03[i],4)));///////riso is in meters!!!!!!!!!
-                sigma[i] = (2.15420e-04 - 4.40523e-05*Riso[i] + 7.10446e-06*Riso[i]*Riso[i]);
+            for(int i = 0; i < eventhits3; i++){        ///start of hits loop per event
+                Riso[i] = (polParam[0]+(polParam[1]*t03[i])+(polParam[2]*pow(t03[i],2))+(polParam[3]*pow(t03[i],3))+(polParam[4]*pow(t03[i],4)));           ///////riso is in meters!!!!!!!!!
+                //Riso[i] = (-8.19526e-06+(5.52853e-05*t03[i])+(7.56188e-08*pow(t03[i],2))+(-3.31433e-09*pow(t03[i],3))+(1.28182e-11*pow(t03[i],4)));       ///////riso is in meters!!!!!!!!!
+                //sigma[i] = (2.15420e-04 - 4.40523e-05*Riso[i] + 7.10446e-06*Riso[i]*Riso[i]);
                 risos->Fill(Riso[i]*1000);
                 xpos[i] = xposition3[i];
                 ypos[i] = yposition3[i];
-                //                cout << " channel is " << channel3[i] << " xpos is " << xpos[i] << " ypos is " << ypos[i] << " t0 is " << t03[i] << " riso is " << Riso[i] << endl;
                 el1->DrawArc(xpos[i],ypos[i],0.005);            ////draw tubes in the map
-                if(Riso[i] >=0.0 && Riso[i] <= 0.0052) el2->DrawArc(xpos[i],ypos[i],Riso[i]);    /////draw ischrones in the map
-            }       ///end hits for loop
+                if(Riso[i] >=0.0 && Riso[i] <= 0.0052) el2->DrawArc(xpos[i],ypos[i],Riso[i]);    /////draw ischrones in the map with an if statement
+            }       ///end hits loop per event
             
-            it = 0;                                 /// set it zero
+            it = 0;                                 /// set it to zero
             
             
-            for (int j = 0; j<25; j++) {
-                for(int i = 0; i < eventhits3; i++){
-                    if(column3[i] == j && Riso[i] >=0.0 && Riso[i] <= 0.0052){
+            for (int j = 0; j<25; j++) {        ///start j loop for columns
+                for(int i = 0; i < eventhits3; i++){    ///start hits loop per event
+                    if(column3[i] == j && Riso[i] >=0.0 && Riso[i] <= 0.0052){  ///if statement for riso
                         newxpos[it] = xpos[i];
                         newypos[it] = ypos[i];
                         newradius[it] = Riso[i];
                         it++;
                     }       ///end if column and riso
                 }			////end loop for hits
-            }           ///end j for loop
+            }           ///end j for loop for columns
             
+            /////////// ********** FOUR POINTS to draw the prefit ****************************
             prefitPointY[0] = newypos[0] - newradius[0];
             prefitPointY[1] = newypos[0] + newradius[0];
             prefitPointY[2] = newypos[it-1] - newradius[it-1];
@@ -240,10 +224,6 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
             prefitPointX[2] = newxpos[it-1];
             prefitPointX[3] = newxpos[it-1];
             
-            //            for (int i =0; i<4; i++) {
-            //            cout << " prefit point x is " << prefitPointX[i] << " prefitpointY is " << prefitPointY[i] << endl;
-            //            }
-            //
             
             for(int i = 0; i < 2; i++){
                 if(i == 0){			//first two lines-tracks
@@ -251,12 +231,10 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
                     kSquared[0] = aa[2];
                     slope[0] = aa[1];
                     yIntercept[0] = aa[0];
-                    //                    cout << "first chi2 is " << kSquared[0] << endl;
                     aa = line(prefitPointX[i],prefitPointX[i+3],prefitPointY[i],prefitPointY[i+3]);
                     kSquared[1] = aa[2];
                     slope[1] = aa[1];
                     yIntercept[1] = aa[0];
-                    //                    cout << "second chi2 is " << kSquared[1] << endl;
                     if (kSquared[1] - kSquared[0] < 0){			//comparing first two lines-tracks and choosing the best according to q^2
                         kSquared[0] = kSquared[1];
                         slope[0] = slope[1];
@@ -268,13 +246,11 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
                     kSquared[2] = aa[2];
                     slope[2] = aa[1];
                     yIntercept[2] = aa[0];
-                    //                    cout << "third chi2 is " << kSquared[2] << endl;
                     aa = line(prefitPointX[i],prefitPointX[i+2],prefitPointY[i],prefitPointY[i+2]);
                     kSquared[3] = aa[2];
                     slope[3] = aa[1];
                     yIntercept[3] = aa[0];
-                    //                    cout << "fourth chi2 is " << kSquared[3] << endl;
-                    if (kSquared[3] - kSquared[2] < 0){			//comparing third and fourth line-track and choosing the best  according to q^2
+                    if (kSquared[3] - kSquared[2] < 0){			//comparing third and fourth line-track and choosing the best according to q^2
                         kSquared[2] = kSquared[3];
                         slope[2] = slope[3];
                         yIntercept[2] = yIntercept[3];
@@ -288,16 +264,13 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
                 yIntercept[0] = yIntercept[2];
             }
             
-            //   cout << " final prefit chi2 is " << kSquared[0] << endl;
             
-            prefit -> SetParameters(yIntercept[0],slope[0]);
-            prefit->Draw("same");
+            prefit -> SetParameters(yIntercept[0],slope[0]);       ///set parameters for prefit
+            prefit->Draw("same");                   ////draw prefit
             
             
-            //cout << " chi2 of the first line is " << kSquared[0] << endl;
-            chisqplot->Fill(kSquared[0]);
+            chisqplot->Fill(kSquared[0]);       ////fill chi2 plot for prefit
             
-            firstiter = 0;
             sumchanDis = 0.0;
             sumresid = 0.0;
             
@@ -317,61 +290,33 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
                         Riso[i] = -999.9;
                         neweventhits3--;
                     }       ///end if chanDis
-                    //                    cout << " channel is " << channel3[i] << " distance from wire is " << chanDis*1000 << " residual is " << (chanDis - Riso[i])*1000 << endl;
                 }       // end if Riso
             }       ///end hits for loop
             
             
-            //            cout << " final fit chi2 is " << result << endl;
-            
-            
-            //            if (result >= kSquared[0]) {
-            //            cout << " event is " << lm << endl;
-            //            test++;
-            //            }
-            
-            if (neweventhits3>7) {
+            if (neweventhits3>7) {      ///if more than 7 tubes, then do minimizer
                 trackMinimizer (yIntercept[0],slope[0],dyIntercept,dslope);		//track construction using minuit function etc
-                fit -> SetParameters(newparam0,newparam1);
-                fit->Draw("same");
-            }
+                fit -> SetParameters(newparam0,newparam1);                      ///set parameters for final fit
+                fit->Draw("same");                                              ///draw final track/fit
+            }   ////end if statement for minimizer
             
-            //cout << " chi2 of the second line is " << result << endl;
-            
-            // if(result ==0.0) cout << " event is " << lm << endl;
-            
-//            for(int i = 0; i < eventhits3; i++){
-//                if(Riso[i] >=0.0 && Riso[i] <= 0.0052){
-//                    chanDis2 = 0.0;
-//                    residual2 = 0.0;
-//                    chanDis2 = distancefrompoint2line(xpos[i],ypos[i],newparam1,newparam0);//distance of track from wire
-//                    residual2 = (chanDis2-Riso[i]);
-//                    if(TMath::Abs(residual2) > 0.0007){         //if track is too far in mm!!!!!!!!!!!!!!!!!!!
-//                        Riso[i] = -999.9;
-//                        neweventhits3--;
-//                    }       ///end if chanDis
-//                }
-//            }
-            
-            chisqplot2->Fill(result);
+            chisqplot2->Fill(result);                                           ///fill chi2 plot of final fit
             prob = 0.0;
-            prob = TMath::Prob(result,neweventhits3-2);
-            probplot -> Fill(prob);
+            prob = TMath::Prob(result,neweventhits3-2);                         ///calculation of prob value from the chi2
+            probplot -> Fill(prob);                                             ////fill prob plot of final fit
             
 
             
-            seconditer = 0;
-            sumchanDis2 = 0.0;
-            sumresid2 = 0.0;
-            totsum = 0.0;                           /// set totsum zero
-            dxsum = 0.0;
+            sumchanDis2 = 0.0;                      /// set variables equal to zero
+            sumresid2 = 0.0;                        /// set variables equal to zero
+            totsum = 0.0;                           /// set variables equal to zero
+            dxsum = 0.0;                            /// set variables equal to zero
             
             
             if(neweventhits3 > 7){
                 if(result < 2){
                     for(int i = 0; i < eventhits3; i++){
                         if(Riso[i] >=0.0 && Riso[i] <= 0.0052){
-                            // cout << " channel is " << channel3[i] << endl;
                             seconditer++;
                             perpSlope = 0.0;
                             perpYIntercept = 0.0;
@@ -408,35 +353,25 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
                             if(Riso[i] > 0.00468 && Riso[i] <=0.00520) resid10->Fill(residual2);
                             for (int j = 0; j< 150; j++) {
                                 if(channel3[i] == j){
-                                    resid_per_channel[j]->Fill(residual2*1000);
-                                }
-                            }
-                            
-                            
-                            
-                            //                    cout << " NEW channel is " << channel3[i] << " NEW distance from wire is " << chanDis*1000 << " NEW residual is " << (chanDis - Riso[i])*1000 << endl;
+                                    resid_per_channel[j]->Fill(residual2*1000);             ////fill residual per channel
+                                } // end if channel3[i] == j
+                            }   ///end if j for channels
                         }       ///end if riso
                     }           ////end hits for loop
                     
-                    totoverdx->Fill(totsum/dxsum);
+                    totoverdx->Fill(totsum/dxsum);      ///fill tot/dx plot
                 }       ///end if result
                 
                 //         c1->Print("event_display.pdf"); /// ---------------> FILL OF THE PDF FILE !!!!!!!!!!!
                 multiplicity->Fill(neweventhits3);
                 multiplicity_diff->Fill(eventhits3-neweventhits3);
-                // if(seconditer <7) cout << " event is " << lm << endl;
             }    ///end if neweventhits3
-            
-            
             tree->Fill();
-            
-            
         } // end of if a || y statement !!!!!!!!!!!!
         else break;
-        //        cout << " -----------> end of event " << lm << " !!!!!!!! " << endl;
-    }			////end of big for loop for events !!!!!!!!!!!!!
+    }			//// END OF BIG FOR LOOP FOR EVENTS !!!!!!!!!!!!!
     
-    resid1->Fit("gaus");
+    resid1->Fit("gaus");        ///fit plots for isochrone error calculation
     resid2->Fit("gaus");
     resid3->Fit("gaus");
     resid4->Fit("gaus");
@@ -447,7 +382,7 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     resid9->Fit("gaus");
     resid10->Fit("gaus");
     
-    iso_error->SetBinContent(1,(resid1->GetFunction("gaus"))->GetParameter(2));
+    iso_error->SetBinContent(1,(resid1->GetFunction("gaus"))->GetParameter(2));                 ////get sigma form the fit of the plots for the isochrone error calculation
     iso_error->SetBinContent(2,(resid2->GetFunction("gaus"))->GetParameter(2));
     iso_error->SetBinContent(3,(resid3->GetFunction("gaus"))->GetParameter(2));
     iso_error->SetBinContent(4,(resid4->GetFunction("gaus"))->GetParameter(2));
@@ -458,15 +393,13 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     iso_error->SetBinContent(9,(resid9->GetFunction("gaus"))->GetParameter(2));
     iso_error->SetBinContent(10,(resid10->GetFunction("gaus"))->GetParameter(2));
     
+    t0_vs_iso2->Fit("finalfit");        ///fit of 4th order polynomial for the new r(t) calculation
     
-    
-    //    cout << "sigma is " << (resid1->GetFunction("gaus"))->GetParameter(2) << endl;
-    t0_vs_iso2->Fit("finalfit");
-    
-    //    cout << "*************************************" << test << endl;
     
     //   c1->Print("event_display.pdf]"); /// ------------------> CLOSE THE PDF FILE !!!!!!!!!!!!
     
+    //**************************** WRITING HISTOGRAMS ****************************
+
     risos->Write();
     multiplicity->Write();
     multiplicity_diff->Write();
@@ -495,6 +428,8 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
         resid_per_channel[j]->Write();
     }
     
+    //************************* WRITING ROOT FILE AND CLOSING ********************
+
     treefile->Close();
     myfile->Write();
     myfile->Close();
@@ -515,15 +450,12 @@ void minuitfcn (Int_t& npar, Double_t* gin, Double_t& f, Double_t* par, Int_t if
             it++;
             dis = distancefrompoint2line (xpos[i],ypos[i],bb,aa);
             resid = residual(dis,Riso[i]);
-            // cout << " residual from 2nd line is " << resid << endl;
             //chisq += (resid*resid)/(sigma[i]*sigma[i]);
             chisq += (resid*resid)/(0.000150*0.000150);
         }//riso if
     }//hits loop
-    //cout << " chi2 from 2nd line is " << chisq << endl;
     f = chisq/(double(it-2));
     result = f;
-    //cout << "***************************" << result << endl;
 }
 
 //___________________________________________________function for track minimizer______________________________________________________________
@@ -550,8 +482,6 @@ void trackMinimizer (double& b,double &a,double &db,double &da){
     gMinuit->GetParameter(0, newparam0, dnewparam0);
     gMinuit->GetParameter(1, newparam1, dnewparam1);
     
-    //    if (ierflag > 0) cout << "Problem in Fit" << endl;
-    
     delete gMinuit;
 }
 
@@ -561,7 +491,7 @@ double distancefrompoint2line (double& x, double& y,double& slope,double& yInter
     return TMath::Abs(y - (slope * x) - yIntercept)/TMath::Sqrt((slope*slope)+1);
 }
 
-// ________________________________________ distance point to line _________________________________________
+// ________________________________________ distance point to line 2 _________________________________________
 
 double distancefrompoint2line2 (double& x2, double& y2,double& slope2,double& yIntercept2){
     return (y2 - (slope2 * x2) - yIntercept2)/TMath::Sqrt((slope2*slope2)+1);
@@ -584,15 +514,13 @@ double* line(double& x1, double& x2,double& y1,double& y2){
     aa[0]= y1 - (aa[1]*x1);
     for (int i= 0; i < eventhits3; i++){
         if(Riso[i] >=0.0 && Riso[i] <= 0.0052){
+            it++;
             dis = distancefrompoint2line (xpos[i],ypos[i],aa[1],aa[0]);
             resid = residual(dis,Riso[i]);
-            //cout << " residual from 1st line is " << resid << endl;
-            it++;
             //chisq += (resid*resid)/(sigma[i]*sigma[i]);
             chisq += (resid*resid)/(0.000150*0.000150);
         } //riso if
     } //hits loop
-    //cout << " chi2 from 1st line is " << chisq << endl;
     aa[2] = chisq/(double(it-2));
     return aa;
 }
