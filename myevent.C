@@ -30,20 +30,20 @@ void myevent::Loop()						//START OF THE LOOP FUNCTION -->LOOP()
 {
     // ******************************************************* variables and arrays ********************************************
     
-    double mean[150] = {0.};
-    double totCorrection[150] = {0.};
-    double t0Correction[150] = {0.};
-    double t0[150];
-    double t0channel[150];
-    double tot[150];
-    double totchannel[150];
-    int channel[150];
-    int channelhit[150];
-    double reftime,drifttimes,tottimes,drifttimes1,tottimes1;
-    double binMaxContent = 0.0,threshold = 0.0;
-    int xbin = 0,binMax = 0;
-    int savedata = 1;
-    int eventhits,it;
+    Double_t mean[150] = {0.};
+    Double_t totCorrection[150] = {0.};
+    Double_t t0Correction[150] = {0.};
+    Double_t t0[150];
+    Double_t t0channel[150];
+    Double_t tot[150];
+    Double_t totchannel[150];
+    Int_t channel[150];
+    Int_t channelhit[150];
+    Double_t reftime,drifttimes,tottimes,drifttimes1,tottimes1;
+    Double_t binMaxContent = 0.0,threshold = 0.0;
+    Int_t xbin = 0,binMax = 0;
+    Int_t savedata = 1;
+    Int_t eventhits,it;
     
     // ******************************************************* histograms ********************************************************
     
@@ -66,7 +66,7 @@ void myevent::Loop()						//START OF THE LOOP FUNCTION -->LOOP()
     
     gStyle->SetOptFit(1111111);
     if(fChain == 0) return;
-    int nentries = fChain->GetEntriesFast();
+    Int_t nentries = fChain->GetEntriesFast();
     
     cout << " ************** Total events in file ******************** ======> " << nentries <<"\n";
     
@@ -86,13 +86,13 @@ void myevent::Loop()						//START OF THE LOOP FUNCTION -->LOOP()
     
     // ******************************************************* main function ********************************************************
     
-    for(int jentry=0; jentry < nentries; jentry++) {               // START OF THE MAIN FOR LOOP FOR EVENTS!!!
-        int ientry = LoadTree(jentry);
+    for(Int_t jentry=0; jentry < nentries; jentry++) {               // START OF THE MAIN FOR LOOP FOR EVENTS!!!
+        Int_t ientry = LoadTree(jentry);
         if(ientry < 0) break;
         fChain->GetEntry(jentry); 				//read each entry of the events
         if(jentry % 50000 == 0)cout <<"  ===========> "<< jentry << " events processed....." << endl;
         
-        for(int i=0;i<150;i++){                 // set 0 all arrays
+        for(Int_t i=0;i<150;i++){                 // set 0 all arrays
             channel[i] = 0;
             channelhit[i] = 0;
             t0[i] = 0.0;
@@ -104,7 +104,7 @@ void myevent::Loop()						//START OF THE LOOP FUNCTION -->LOOP()
         eventhits = 0;                          //set equal to 0 the eventhits variable
         it = 0;                                 //set equal to 0 the it variable
         
-        for(int i=0;i< totalNTDCChannels;i++){							//for loop for hits per event
+        for(Int_t i=0;i< totalNTDCChannels;i++){							//for loop for hits per event
             if (TDCChannels_channel[i] == 148){                     // if statement for reference channel 148 times to fill
                 reftime = TDCChannels_leadTimes[i][0];              // lead times for channel 148
                 reftime0 -> Fill(reftime);                           // fill plot for the times of the reference channel 148
@@ -112,9 +112,9 @@ void myevent::Loop()						//START OF THE LOOP FUNCTION -->LOOP()
         }   // end for loop for hits per event
         
         
-        for(int i=0;i< totalNTDCChannels;i++){							//START OF THE MAIN FOR LOOP FOR HITS PER EVENT!!!
+        for(Int_t i=0;i< totalNTDCChannels;i++){							//START OF THE MAIN FOR LOOP FOR HITS PER EVENT!!!
             t0_raw_1->Fill(TDCChannels_leadTimes[i][0]);                 //fill plot of the times without any cuts, really raw data
-            for (int j = 0; j < 2 ; j++){
+            for (Int_t j = 0; j < 2 ; j++){
                 if(TDCChannels_leadTimes[i][j] >= -850.0 && TDCChannels_leadTimes[i][j]<=-550.0){
                     drifttimes = TDCChannels_leadTimes[i][j];
                     drifttimes1 = TDCChannels_leadTimes[i][0];
@@ -137,13 +137,13 @@ void myevent::Loop()						//START OF THE LOOP FUNCTION -->LOOP()
                 } ////end first if statement
             }   /////end j loop
         }       ////END OF THE MAIN FOR LOOP FOR HITS PER EVENT!!!!!!!!!!!!
-       if (eventhits > 7) tree -> Fill();          //fill tree with data only if we have more than 7 tubes hits per event/track
+       if (eventhits > 7 && eventhits < 41) tree -> Fill();          //fill tree with data only if we have more than 7 tubes hits per event/track
     }    ///END OF THE MAIN FOR LOOP FOR EVENTS!!!!!!!!!!!!!
     
     
     ///// ********************************* starting correction for times *******************************************
     
-    for (int i = 0; i < 150; i++){
+    for (Int_t i = 0; i < 150; i++){
         projX_tot = tot_vs_chan_multi_1 ->ProjectionX("_px",i,i);
         projX_tot -> Fit("gaus","q0","q0",130,330);
         if (projX_tot -> GetFunction("gaus")){
@@ -155,7 +155,7 @@ void myevent::Loop()						//START OF THE LOOP FUNCTION -->LOOP()
             continue;
         }
         
-        for (int i = 0; i < 150; i++){
+        for (Int_t i = 0; i < 150; i++){
             totCorrection[i] = mean[i] - mean[130];
         }
     
@@ -171,7 +171,7 @@ void myevent::Loop()						//START OF THE LOOP FUNCTION -->LOOP()
     if (savedata ==1)               ////save correction file for drift times
     {
         fstream out_t0Correction ("out_t0Correction_0.55GeV_dabc16117205401.txt", ofstream::out);
-        for (int i = 0; i < 150; i++){
+        for (Int_t i = 0; i < 150; i++){
             out_t0Correction << t0Correction[i] << endl;
         }
         out_t0Correction.close();
@@ -181,7 +181,7 @@ void myevent::Loop()						//START OF THE LOOP FUNCTION -->LOOP()
     if (savedata ==1)           ////save correction file for tot times times
     {
         fstream out_totCorrection ("out_totCorrection_0.55GeV_dabc16117205401.txt", ofstream::out);
-        for (int i = 0; i < 150; i++){
+        for (Int_t i = 0; i < 150; i++){
             out_totCorrection << totCorrection[i] << endl;
         }
         out_totCorrection.close();
@@ -212,13 +212,13 @@ void myevent::Correction()						//START OF THE CORRECTION FUNCTION -->CORRECTION
     
     // ******************************************************* variables and arrays ********************************************
 
-    int eventhits2,it,it1;
-    double xposition2[150],yposition2[150],t02[150],t0channel2[150],tot2[150],totchannel2[150];
-    double totCorrection2[150] = {0.};
-    double t0Correction2[150] = {0.};
-    int row2[150],column2[150],channel2[150],channelhit2[150];
-    const int rows = 7,columns = 25;
-    int strawMap[rows][columns] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    Int_t eventhits2,it,it1;
+    Double_t xposition2[150],yposition2[150],t02[150],t0channel2[150],tot2[150],totchannel2[150];
+    Double_t totCorrection2[150] = {0.};
+    Double_t t0Correction2[150] = {0.};
+    Int_t row2[150],column2[150],channel2[150],channelhit2[150];
+    const Int_t rows = 7,columns = 25;
+    Int_t strawMap[rows][columns] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,100,102,104,106,108,110,112,114,116,118,120,122,124,126,128,130,132,134,136,138,140,142,144,146,
         0,99,101,103,105,107,109,111,113,115,117,119,121,123,125,127,129,131,133,135,137,139,141,143,145,
         0,51,53,55,57,59,61,63,65,67,69,71,73,75,77,79,81,83,85,87,89,91,93,95,97,
@@ -267,7 +267,7 @@ void myevent::Correction()						//START OF THE CORRECTION FUNCTION -->CORRECTION
     
     // **********************************************************************************************************
     
-    int nentries = readtree ->GetEntriesFast();
+    Int_t nentries = readtree ->GetEntriesFast();
     cout << " Events in file for correction  ===> " << nentries <<"\n";
     
     
@@ -283,7 +283,7 @@ void myevent::Correction()						//START OF THE CORRECTION FUNCTION -->CORRECTION
     totCorrectionData.open("out_totCorrection_0.55GeV_dabc16117205401.txt");     // open input file
     t0CorrectionData.open("out_t0Correction_0.55GeV_dabc16117205401.txt");
     
-    for(int i = 0; i < 150; i++){
+    for(Int_t i = 0; i < 150; i++){
         totCorrectionData >> totCorrection2[i];
         t0CorrectionData >> t0Correction2[i];
     }
@@ -291,10 +291,10 @@ void myevent::Correction()						//START OF THE CORRECTION FUNCTION -->CORRECTION
     t0CorrectionData.close();
     
     
-    for (int jentry=0; jentry<nentries; jentry++) {         ////start of for loop for events
+    for (Int_t jentry=0; jentry<nentries; jentry++) {         ////start of for loop for events
         readtree -> GetEntry(jentry);
         
-        for (int i = 0; i < 150; i++){      /// set arrays equal to 0
+        for (Int_t i = 0; i < 150; i++){      /// set arrays equal to 0
             row2[i] = 0;
             column2[i] = 0;
             yposition2[i] = 0.0;
@@ -304,7 +304,7 @@ void myevent::Correction()						//START OF THE CORRECTION FUNCTION -->CORRECTION
         it1=0;
         it=0;
         
-        for (int i=0; i < eventhits2; i++){
+        for (Int_t i=0; i < eventhits2; i++){
             hits_per_channel->Fill(channel2[i]);
             t02[i] = t02[i] - t0Correction2[channel2[i]+1];
             tot2[i] = tot2[i];// - totCorrection2[channel2[i]+1];
@@ -314,8 +314,8 @@ void myevent::Correction()						//START OF THE CORRECTION FUNCTION -->CORRECTION
             tot_vs_chan_corr->Fill(tot2[i],channel2[i]);
             t0s_vs_tots_corr->Fill(t02[i],tot2[i]);
             
-            for (int j = 1; j < rows ; j++){
-                for (int k = 1; k < columns ; k++){
+            for (Int_t j = 1; j < rows ; j++){
+                for (Int_t k = 1; k < columns ; k++){
                     if(channel2[i] == strawMap[j][k]){
                         yposition2[strawMap[j][k]] = (j*0.00878); ////in meters
                         if(channel2[i] > 0 && channel2[i] < 49){
@@ -352,29 +352,29 @@ void myevent::Correction()						//START OF THE CORRECTION FUNCTION -->CORRECTION
                     } //if channel is element of the strawmap
                 } // columns for loop
             } //rows for loop
-            if(t02[i] >=0.0 && t02[i]<= 160.0) it1++;
+            if(t02[i] >= 0.0 && t02[i] <= 155.0) it1++;
         } ///end for loop for hits
         if(it1 > 7 && it1 < 41) tree->Fill();
     } ////end for loop for events
     treefile->Close();
     
-    double N = 0.0, Ni = 0.0, SumNi = 0.0, wuv = 0.0;				////in meters
-    double Riso=0.0, Ra = 0.00505, Rwire = 0.00001, Ravalanch = 0.00010;  ////in meters
+    Double_t N = 0.0, Ni = 0.0, SumNi = 0.0, wuv = 0.0;				////in meters
+    Double_t Riso=0.0, Ra = 0.00505, Rwire = 0.00001, Ravalanch = 0.000050;  ////in meters
     
     // ******************************* Riso calculation ***********************************************
-    for (int i = 0; i < 150 ; i++){
+    for (Int_t i = 0; i < 150 ; i++){
         t0_allchan_calibration -> Add(t0_vs_chan_corr -> ProjectionX("_px",i,i));
     }
     
     t0_allchan_calibration_1 = (TH1D*)t0_allchan_calibration -> ShowBackground(30,"same");
     t0_allchan_calibration_2 -> Add(t0_allchan_calibration_1,t0_allchan_calibration,-1,1);
     
-    for(int i = 0; i < 81; i++ ){
+    for(Int_t i = 0; i < 81; i++ ){
         wuv = t0_allchan_calibration_2 -> GetBinContent(i+26);
         t0_allchan_calibration_new -> SetBinContent(i, wuv);
         N += wuv;
     }
-    for(int i = 0; i < 81; i++){
+    for(Int_t i = 0; i < 81; i++){
         Ni = t0_allchan_calibration_new -> GetBinContent(i);
         SumNi += Ni;
         Riso = ((SumNi/N)*(Ra - Rwire))+(Ravalanch);
@@ -385,8 +385,8 @@ void myevent::Correction()						//START OF THE CORRECTION FUNCTION -->CORRECTION
     Riso_vs_tdrift -> SetMarkerStyle(3);
     Riso_vs_tdrift -> Fit("RisoFit","q");
     
-    ofstream out_Riso ("out_Riso_0.55GeV_dabc16117205401.txt", ofstream::out);    ////save parameters from riso calculation
-    for(int i = 0; i < 5; i++){
+    fstream out_Riso ("out_Riso_0.55GeV_dabc16117205401.txt", ofstream::out);    ////save parameters from riso calculation
+    for(Int_t i = 0; i < 5; i++){
         out_Riso << RisoFit -> GetParameter(i) << endl;
     }
     out_Riso.close();
