@@ -49,7 +49,7 @@ void minuitfcn (Int_t& npar, Double_t* gin, Double_t& f, Double_t* par, Int_t if
 Double_t distancefrompoint2line (Double_t& x, Double_t& y,Double_t& slope,Double_t& yIntercept);
 Double_t distancefrompoint2line2 (Double_t& x2, Double_t& y2,Double_t& slope2,Double_t& yIntercept2);
 Double_t residual (Double_t dis,Double_t radius);
-void trackMinimizer (Double_t& b,Double_t &a,Double_t &db,Double_t &da);
+void trackMinimizer (Double_t& b,Double_t &a,Double_t &db,Double_t &da,Double_t chis);
 Double_t* line(Double_t& x1, Double_t& x2,Double_t& y1,Double_t& y2);
 
 
@@ -106,6 +106,7 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     
     TH1D* resid_per_channel[150] = {0};         /////in mm
     TH1D* wire_per_channel[150] = {0};         /////in mm
+    TH2D* rt_per_channel[150] = {0};         /////in mm
     TH1D* proj_y_rt;
     TH1D* new_rt = new TH1D("new_rt","new_rt",155,0.,155.); // in meters
     TH2D* new_rt_layer[7] = {0};         /////in mm
@@ -127,7 +128,7 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     el1->SetFillStyle(3000);
     el2->SetFillStyle(3000);
     TString a;
-    TString Name1,Name2,Name3,Name4;
+    TString Name1,Name2,Name3,Name4,Name5;
     gStyle->SetFuncWidth(1);
     TF1* g1 = new TF1("g1","gaus",-0.0055,0.);
     TF1* g2 = new TF1("g2","gaus",0.,0.0055);
@@ -139,6 +140,9 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
         resid_per_channel[i] = new TH1D(Name1,Name1,1000,-1.0,1.0);
         Name2.Form(" Distance from wire of channel %d " ,i);
         wire_per_channel[i] = new TH1D(Name2,Name2,1200,-6.0,6.0);
+        Name5.Form(" r(t) of channel %d " ,i);
+        rt_per_channel[i] = new TH2D(Name5,Name5,155,0.,155.,550, 0.,0.0055);
+
     }
     
     for (Int_t i = 0; i< 7; i++) {
@@ -225,7 +229,7 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
             for(Int_t i = 0; i < eventhits3; i++){        ///start of hits loop per event
                 Riso[i] = (polParam[0]+(polParam[1]*t03[i])+(polParam[2]*pow(t03[i],2))+(polParam[3]*pow(t03[i],3))+(polParam[4]*pow(t03[i],4)));           ///////riso is in meters!!!!!!!!!
                 if(Riso[i] <0.0 && Riso[i] > 0.00035) Riso[i] = 0.000025;
-                sigma[i] = (0.000250 - 0.000003*Riso[i] + 0.000015*Riso[i]*Riso[i]);
+                sigma[i] = (0.000189633 + 2.42154e-05*Riso[i] - 5.96517e-06*Riso[i]*Riso[i]);
                 risos->Fill(Riso[i]*1000);
                 xpos[i] = xposition3[i];
                 ypos[i] = yposition3[i];
@@ -316,7 +320,7 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
             multiplicity2->Fill(neweventhits3);
             
             
-            trackMinimizer (yIntercept[0],slope[0],dyIntercept,dslope);		//track construction using minuit function etc
+            trackMinimizer (yIntercept[0],slope[0],dyIntercept,dslope,kSquared[0]);		//track construction using minuit function etc
             fit -> SetParameters(newparam0,newparam1);                      ///set parameters for final fit
             fit->Draw("same");              ///draw final track/fit
             
@@ -337,11 +341,11 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
             multiplicity3->Fill(neweventhits3);
             
             if(outiter !=0){
-            trackMinimizer (yIntercept[0],slope[0],dyIntercept,dslope);		//track construction using minuit function etc
-            fit -> SetParameters(newparam0,newparam1);                      ///set parameters for final fit
-            fit->Draw("same");              ///draw final track/fit
+                trackMinimizer (yIntercept[0],slope[0],dyIntercept,dslope,kSquared[0]);		//track construction using minuit function etc
+                fit -> SetParameters(newparam0,newparam1);                      ///set parameters for final fit
+                fit->Draw("same");              ///draw final track/fit
             }
-                
+            
             chisqplot->Fill(result);///fill chi2 plot of final fit
             result = result*(neweventhits3-2);
             prob = 0.0;
@@ -353,7 +357,7 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
             dxsum = 0.0;                            /// set variables equal to zero
             iter = 0;
             
-            // if(neweventhits3>7){
+             if(neweventhits3>7){
             // if(prob >0.1){
             for(Int_t i = 0; i < eventhits3; i++){
                 if(Riso[i] >=0.0 && Riso[i] <= 0.0052){
@@ -418,10 +422,12 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
                         if(channel3[i] == j){
                             wire_per_channel[j]->Fill(chanDis2*1000);
                             resid_per_channel[j]->Fill(residual*1000);             ////fill residual per channel
+                            rt_per_channel[j]->Fill(t03[i],chanDis);
                         } // end if channel3[i] == j
                     }   ///end if j for channels
                 }       ///end if riso
             }           ////end hits for loop
+             } //end if neweventhits3
             multiplicitycheck->Fill(iter);
             meanresiduals->Fill(sumresid*1000/iter);
             totoverdx->Fill(totsum/dxsum);      ///fill tot/dx plot
@@ -545,6 +551,7 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     for (Int_t j = 0; j< 150; j++) {
         wire_per_channel[j]->Write();
         resid_per_channel[j]->Write();
+        rt_per_channel[j]->Write();
     }
     for (Int_t j = 0; j< 7; j++) {
         new_rt_layer[j]->Write();
@@ -572,17 +579,17 @@ void minuitfcn (Int_t& npar, Double_t* gin, Double_t& f, Double_t* par, Int_t if
             it++;
             dis = distancefrompoint2line (xpos[i],ypos[i],bb,aa);
             resid = residual(dis,Riso[i]);
-            chisq += (resid*resid)/(sigma[i]*sigma[i]);
-            //chisq += (resid*resid)/(0.000150*0.000150);
+            //chisq += (resid*resid)/(sigma[i]*sigma[i]);
+            chisq += (resid*resid)/(0.000200*0.000200);
         }//riso if
     }//hits loop
-    f = chisq/(Double_t(it-2));
-    result = f;
+    f = chisq/(Double_t(it));
+    result = chisq/(Double_t(it-2));
 }
 
 //___________________________________________________function for track minimizer______________________________________________________________
 
-void trackMinimizer (Double_t& b,Double_t &a,Double_t &db,Double_t &da){
+void trackMinimizer (Double_t& b,Double_t &a,Double_t &db,Double_t &da,Double_t chis){
     
     TMinuit *gMinuit = new TMinuit(2);
     gMinuit -> SetFCN(minuitfcn);
@@ -601,7 +608,7 @@ void trackMinimizer (Double_t& b,Double_t &a,Double_t &db,Double_t &da){
     arglist[1] = 1.;
     gMinuit -> mnexcm("MIGRAD",arglist,2,ierflag);
     //gMinuit -> mnexcm("MINI",arglist,2,ierflag);
-
+    
     
     gMinuit->GetParameter(0, newparam0, dnewparam0);
     gMinuit->GetParameter(1, newparam1, dnewparam1);
@@ -641,15 +648,10 @@ Double_t* line(Double_t& x1, Double_t& x2,Double_t& y1,Double_t& y2){
             it++;
             dis = distancefrompoint2line (xpos[i],ypos[i],aa[1],aa[0]);
             resid = residual(dis,Riso[i]);
-            chisq += (resid*resid)/(sigma[i]*sigma[i]);
-            //chisq += (resid*resid)/(0.000150*0.000150);
+            //chisq += (resid*resid)/(sigma[i]*sigma[i]);
+            chisq += (resid*resid)/(0.000200*0.000200);
         } //riso if
     } //hits loop
     aa[2] = chisq/(Double_t(it-2));
     return aa;
 }
-
-
-
-
-
