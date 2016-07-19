@@ -57,7 +57,7 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
 {
     // ***************** VARIABLES, ARRAYS, ARCS, STRINGS ********************************
     Int_t neweventhits3,it,iter,outiter;
-    Double_t prob,chanDis,chanDis2,residual,sumresid,perpYIntercept,perpSlope,hitPosX,hitPosY,alpha,totsum,dxsum;
+    Double_t prob,chanDis,chanDis2,residual,sumresid,perpYIntercept,perpSlope,hitPosX,hitPosY,alpha,totsum,dxsum,position_y;
     Int_t channel3[150],channelhit3[150],row3[150],column3[150];              // number of channels
     Double_t xposition3[150],yposition3[150],t03[150],t0channel3[150],tot3[150],totchannel3[150],dx[150],newxpos[150],newypos[150],newradius[150];
     Double_t prefitPointX[4],prefitPointY[4],slope[4],yIntercept[4],kSquared[4];
@@ -103,14 +103,26 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     TH1D* iso_error = new TH1D("iso_error","iso_error",20,0.,5.2);
     TH2D* wire_vs_channel = new TH2D("wire_vs_channel","wire_vs_channel",1400,-7.0,7.0,150,0.,150.);  ///in mm
     TH2D* resid_vs_channel = new TH2D("resid_vs_channel","resid_vs_channel",1000,-1.0,1.0,150,0.,150.);  //in mm
-    
+    TH1D* proj_y_rt;
+    TH1D* new_rt = new TH1D("new_rt","new_rt",155,0.,155.); // in meters
+
     TH1D* resid_per_channel[150] = {0};         /////in mm
     TH1D* wire_per_channel[150] = {0};         /////in mm
     TH2D* rt_per_channel[150] = {0};         /////in mm
-    TH1D* proj_y_rt;
-    TH1D* new_rt = new TH1D("new_rt","new_rt",155,0.,155.); // in meters
+    TH2D* rt_per_channel2[150] = {0};         /////in mm
+    TH1D* above_resid_per_channel[150] = {0};         /////in mm
+    TH1D* below_resid_per_channel[150] = {0};         /////in mm
+    TH1D* above_wire_per_channel[150] = {0};         /////in mm
+    TH1D* below_wire_per_channel[150] = {0};         /////in mm
+    TH1D* resid_per_layer[7] = {0};
+    TH1D* wire_per_layer[7] = {0};
     TH2D* new_rt_layer[7] = {0};         /////in mm
     TH2D* new_rt_layer2[7] = {0};         /////in mm
+    TH1D* above_resid_per_layer[7] = {0};
+    TH1D* below_resid_per_layer[7] = {0};
+    TH1D* above_wire_per_layer[7] = {0};
+    TH1D* below_wire_per_layer[7] = {0};
+
     
     
     
@@ -128,7 +140,7 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     el1->SetFillStyle(3000);
     el2->SetFillStyle(3000);
     TString a;
-    TString Name1,Name2,Name3,Name4,Name5;
+    TString Name1,Name2,Name3,Name4,Name5,Name6,Name7,Name8,Name1a,Name2a,Name3a,Name4a,Name5a,Name6a,Name7a,Name8a;
     gStyle->SetFuncWidth(1);
     TF1* g1 = new TF1("g1","gaus",-0.0055,0.);
     TF1* g2 = new TF1("g2","gaus",0.,0.0055);
@@ -140,18 +152,39 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
         resid_per_channel[i] = new TH1D(Name1,Name1,1000,-1.0,1.0);
         Name2.Form(" Distance from wire of channel %d " ,i);
         wire_per_channel[i] = new TH1D(Name2,Name2,1200,-6.0,6.0);
-        Name5.Form(" r(t) of channel %d " ,i);
-        rt_per_channel[i] = new TH2D(Name5,Name5,155,0.,155.,550, 0.,0.0055);
-
+        Name3.Form(" r(t) of channel %d " ,i);
+        rt_per_channel[i] = new TH2D(Name3,Name3,155,0.,155.,1100, -5.5,5.5);
+        Name4.Form(" abs r(t) of channel %d " ,i);
+        rt_per_channel2[i] = new TH2D(Name4,Name4,155,0.,155.,550, 0.,5.5);
+        Name5.Form(" Above wire residual of channel %d " ,i);
+        above_resid_per_channel[i] = new TH1D(Name5,Name5,1000,-1.0,1.0);
+        Name6.Form(" Below wire residual of channel %d " ,i);
+        below_resid_per_channel[i] = new TH1D(Name6,Name6,1000,-1.0,1.0);
+        Name7.Form(" Above wire distance from wire of channel %d " ,i);
+        above_wire_per_channel[i] = new TH1D(Name7,Name7,1200,-6.0,6.0);
+        Name8.Form(" Below wire distance from wire of channel %d " ,i);
+        below_wire_per_channel[i] = new TH1D(Name8,Name8,1200,-6.0,6.0);
     }
     
     for (Int_t i = 0; i< 7; i++) {
-        Name3.Form(" new rt curve for layer %d " ,i);
-        new_rt_layer[i] = new TH2D(Name3,Name3,155,0.,155.,1100, -0.0055,0.0055);
-        Name4.Form(" new abs rt curve for layer %d " ,i);
-        new_rt_layer2[i] = new TH2D(Name4,Name4,155,0.,155.,550, 0.,0.0055);
-        
-    }
+        Name1a.Form(" Residual of layer %d " ,i);
+        resid_per_layer[i] = new TH1D(Name1a,Name1a,1000,-1.0,1.0);
+        Name2a.Form(" Distance from wire of layer %d " ,i);
+        wire_per_layer[i] = new TH1D(Name2a,Name2a,1200,-6.0,6.0);
+        Name3a.Form(" new rt curve for layer %d " ,i);
+        new_rt_layer[i] = new TH2D(Name3a,Name3a,155,0.,155.,1100, -5.5,5.5);
+        Name4a.Form(" new abs rt curve for layer %d " ,i);
+        new_rt_layer2[i] = new TH2D(Name4a,Name4a,155,0.,155.,550, 0.,5.5);
+        Name5a.Form(" Above wire residual of layer %d " ,i);
+        above_resid_per_layer[i] = new TH1D(Name5a,Name5a,1000,-1.0,1.0);
+        Name6a.Form(" Below wire residual of layer %d " ,i);
+        below_resid_per_layer[i] = new TH1D(Name6a,Name6a,1000,-1.0,1.0);
+        Name7a.Form(" Above wire distance from wire of layer %d " ,i);
+        above_wire_per_layer[i] = new TH1D(Name7a,Name7a,1200,-6.0,6.0);
+        Name8a.Form(" Below wire distance from wire of layer %d " ,i);
+        below_wire_per_layer[i] = new TH1D(Name8a,Name8a,1200,-6.0,6.0);
+
+            }
     
     
     ifstream polParamData;							     	//declare stream
@@ -227,7 +260,8 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
         if(a =="y" || a == "a"){    //// start of the if a || y statement !!!!!!!!!!!!!!!
             plot->Draw();
             for(Int_t i = 0; i < eventhits3; i++){        ///start of hits loop per event
-                Riso[i] = (polParam[0]+(polParam[1]*t03[i])+(polParam[2]*pow(t03[i],2))+(polParam[3]*pow(t03[i],3))+(polParam[4]*pow(t03[i],4)));           ///////riso is in meters!!!!!!!!!
+                //Riso[i] = (polParam[0]+(polParam[1]*t03[i])+(polParam[2]*pow(t03[i],2))+(polParam[3]*pow(t03[i],3))+(polParam[4]*pow(t03[i],4)));           ///////riso is in meters!!!!!!!!!
+                Riso[i] = (-0.000105091+(5.42992e-05*t03[i])+(5.58724e-08*pow(t03[i],2))+(-2.60983e-09*pow(t03[i],3))+(9.13256e-12*pow(t03[i],4)));           ///////riso is in meters!!!!!!!!!
                 if(Riso[i] <0.0 && Riso[i] > 0.00035) Riso[i] = 0.000025;
                 sigma[i] = (0.000189633 + 2.42154e-05*Riso[i] - 5.96517e-06*Riso[i]*Riso[i]);
                 risos->Fill(Riso[i]*1000);
@@ -371,6 +405,7 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
                     chanDis = 0.0;
                     chanDis2 = 0.0;
                     residual = 0.0;
+                    position_y = 0.0;
                     chanDis = distancefrompoint2line(xpos[i],ypos[i],newparam1,newparam0);//distance of track from wire
                     chanDis2 = distancefrompoint2line2(xpos[i],ypos[i],newparam1,newparam0);//distance of track from wire
                     residual = (chanDis-Riso[i]);
@@ -380,10 +415,21 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
                     residual_vs_r->Fill(residual*1000,Riso[i]*1000);
                     t0_vs_iso -> Fill(t03[i],distancefrompoint2line2(xpos[i],ypos[i],newparam1,newparam0));
                     t0_vs_iso2 -> Fill(t03[i],chanDis);
+                    position_y = (newparam1*xpos[i] + newparam0);
                     for (Int_t j =0; j<7; j++) {
                         if(row3[i] == j){
-                            new_rt_layer[j]->Fill(t03[i],distancefrompoint2line2(xpos[i],ypos[i],newparam1,newparam0));
-                            new_rt_layer2[j]->Fill(t03[i],chanDis);
+                            new_rt_layer[j]->Fill(t03[i],chanDis2*1000);
+                            new_rt_layer2[j]->Fill(t03[i],chanDis*1000);
+                            wire_per_layer[j]->Fill(chanDis2*1000);
+                            resid_per_layer[j]->Fill(residual*1000);
+                            if((position_y - ypos[i]) >= 0.0) {
+                                above_resid_per_layer[j]->Fill(residual*1000);
+                                above_wire_per_layer[j]->Fill(chanDis2*1000);
+                            }
+                            if((position_y - ypos[i]) < 0.0) {
+                                below_resid_per_layer[j]->Fill(residual*1000);
+                                below_wire_per_layer[j]->Fill(chanDis2*1000);
+                            }
                         }
                     }
                     wire_vs_channel->Fill(distancefrompoint2line2(xpos[i],ypos[i],newparam1,newparam0)*1000,channel3[i]);
@@ -416,13 +462,22 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
                     if(Riso[i] > 0.00442 && Riso[i] <=0.00468) resid18->Fill(residual);
                     if(Riso[i] > 0.00468 && Riso[i] <=0.00494) resid19->Fill(residual);
                     if(Riso[i] > 0.00494 && Riso[i] <=0.00520) resid20->Fill(residual);
-                    
+                    //cout << " channel is " << channel3[i] << " xpos is " << xpos[i] << " ypos is " << ypos[i] << " riso is " << Riso[i] << " new ypos is " << (newparam1*xpos[i] + newparam0) << endl;
                     
                     for (Int_t j = 0; j< 150; j++) {
                         if(channel3[i] == j){
                             wire_per_channel[j]->Fill(chanDis2*1000);
                             resid_per_channel[j]->Fill(residual*1000);             ////fill residual per channel
-                            rt_per_channel[j]->Fill(t03[i],chanDis);
+                            rt_per_channel[j]->Fill(t03[i],chanDis2*1000);
+                            rt_per_channel2[j]->Fill(t03[i],chanDis*1000);
+                            if((position_y - ypos[i]) >= 0.0) {
+                                above_resid_per_channel[j]->Fill(residual*1000);
+                                above_wire_per_channel[j]->Fill(chanDis2*1000);
+                            }
+                            if((position_y - ypos[i]) < 0.0) {
+                                below_resid_per_channel[j]->Fill(residual*1000);
+                                below_wire_per_channel[j]->Fill(chanDis2*1000);
+                            }
                         } // end if channel3[i] == j
                     }   ///end if j for channels
                 }       ///end if riso
@@ -552,10 +607,21 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
         wire_per_channel[j]->Write();
         resid_per_channel[j]->Write();
         rt_per_channel[j]->Write();
+        rt_per_channel2[j]->Write();
+        above_resid_per_channel[j]->Write();
+        below_resid_per_channel[j]->Write();
+        above_wire_per_channel[j]->Write();
+        below_wire_per_channel[j]->Write();
     }
     for (Int_t j = 0; j< 7; j++) {
         new_rt_layer[j]->Write();
         new_rt_layer2[j]->Write();
+        wire_per_layer[j]->Write();
+        resid_per_layer[j]->Write();
+        above_resid_per_layer[j]->Write();
+        below_resid_per_layer[j]->Write();
+        above_wire_per_layer[j]->Write();
+        below_wire_per_layer[j]->Write();
     }
     //************************* WRITING ROOT FILE AND CLOSING ********************
     
