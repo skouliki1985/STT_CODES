@@ -27,9 +27,10 @@
 
 
 
+
 using namespace std;
 
-TString stra = "0.55GeV_dabc16117205401";                   //file which will contain the plots
+TString stra = "2.95GeV_dabc16116172551";                   //file which will contain the plots
 TString strb = ".root";                                     //file which will contain the plots
 TString strc = "_corr";                                     //file which will contain the plots
 TString strd = "_track";                                    //file which will contain the plots
@@ -56,14 +57,21 @@ Double_t* line(Double_t& x1, Double_t& x2,Double_t& y1,Double_t& y2);
 void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!!!!!!!!
 {
     // ***************** VARIABLES, ARRAYS, ARCS, STRINGS ********************************
-    Int_t neweventhits3,it,iter,outiter;
-    Double_t prob,chanDis,chanDis2,residual,sumresid,perpYIntercept,perpSlope,hitPosX,hitPosY,alpha,totsum,dxsum,position_y;
+    Int_t neweventhits3,it,iiter,iter,outiter,truncate10,truncate20,truncate30;
+    Double_t prob,chanDis,chanDis2,residual,sumresid,perpYIntercept,perpSlope,hitPosX,hitPosY,alpha,position_y;
     Int_t channel3[150],channelhit3[150],row3[150],column3[150];              // number of channels
     Double_t xposition3[150],yposition3[150],t03[150],t0channel3[150],tot3[150],totchannel3[150],dx[150],newxpos[150],newypos[150],newradius[150];
     Double_t prefitPointX[4],prefitPointY[4],slope[4],yIntercept[4],kSquared[4];
     Double_t polParam[5] = {0.};
     Double_t dslope = 0.001, dyIntercept =0.001;
     Double_t* aa;
+    Double_t totoverdx[150][3];
+    Double_t totsum,dxsum,temp,totsum10,dxsum10,totsum20,dxsum20,totsum30,dxsum30;
+    Double_t array_test1[150];
+    Double_t array_test2[150];
+    Double_t array_test3[150];
+
+    
     
     
     TH1D* risos = new TH1D("risos","risos",1000,-1.0,9.0); // in mm
@@ -76,7 +84,6 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     TH1D* distancefromwire = new TH1D("distancefromwire","distancefromwire",1200,-6.,6.); ///in mm
     TH1D* distancefromisochrone = new TH1D("distancefromisochrone","distancefromisochrone",1000,-1.,1.); ///in mm
     TH1D* meanresiduals = new TH1D("meanresiduals","meanresiduals",1000,0.,2.); ///in mm
-    TH1D* totoverdx = new TH1D("totoverdx","totoverdx",1000,0.0,100.);
     TH2D* residual_vs_r = new TH2D("residual_vs_r","residual_vs_r",1000,-2.,2.,510,0.,5.1); ///in mm
     TH2D* t0_vs_iso = new TH2D("t0_vs_iso","t0_vs_iso",165,0.,165.,1100, -0.0055,0.0055);  ///in meters
     TH2D* t0_vs_iso2 = new TH2D("t0_vs_iso2","t0_vs_iso2",165,0.,165.,550, 0.,0.0055);      ///in meters
@@ -101,11 +108,16 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     TH1D* resid19 = new TH1D("resid19","resid19",1000,-0.001,0.001); // in meters
     TH1D* resid20 = new TH1D("resid20","resid20",1000,-0.001,0.001); // in meters
     TH1D* iso_error = new TH1D("iso_error","iso_error",20,0.,5.2);
+    TH1F* tot_over_dx = new TH1F("tot_over_dx","tot/dx",100,0.,100.);
+    TH1F* tot_over_dx_10 = new TH1F("tot_over_dx_10","tot/dx_10",100,0.,100.);
+    TH1F* tot_over_dx_20 = new TH1F("tot_over_dx_20","tot/dx_20",100,0.,100.);
+    TH1F* tot_over_dx_30 = new TH1F("tot_over_dx_30","tot/dx_30",100,0.,100.);
+    
     TH2D* wire_vs_channel = new TH2D("wire_vs_channel","wire_vs_channel",1400,-7.0,7.0,150,0.,150.);  ///in mm
     TH2D* resid_vs_channel = new TH2D("resid_vs_channel","resid_vs_channel",1000,-1.0,1.0,150,0.,150.);  //in mm
     TH1D* proj_y_rt;
     TH1D* new_rt = new TH1D("new_rt","new_rt",155,0.,155.); // in meters
-
+    
     TH1D* resid_per_channel[150] = {0};         /////in mm
     TH1D* wire_per_channel[150] = {0};         /////in mm
     TH2D* rt_per_channel[150] = {0};         /////in mm
@@ -122,7 +134,7 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     TH1D* below_resid_per_layer[7] = {0};
     TH1D* above_wire_per_layer[7] = {0};
     TH1D* below_wire_per_layer[7] = {0};
-
+    
     
     
     
@@ -183,12 +195,12 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
         above_wire_per_layer[i] = new TH1D(Name7a,Name7a,1200,-6.0,6.0);
         Name8a.Form(" Below wire distance from wire of layer %d " ,i);
         below_wire_per_layer[i] = new TH1D(Name8a,Name8a,1200,-6.0,6.0);
-
-            }
+        
+    }
     
     
     ifstream polParamData;							     	//declare stream
-    polParamData.open("out_Riso_0.55GeV_dabc16117205401.txt");				//open riso txt file
+    polParamData.open("out_Riso_2.95GeV_dabc16116172551.txt");				//open riso txt file
     for(Int_t i = 0; i < 5; i++){
         polParamData >> polParam[i];                       //save in array values from riso txt file
     }
@@ -246,6 +258,9 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
             newypos[i] = 0.0;
             newradius[i] = 0.0;
             dx[i] = 0.0;
+            array_test1[i] = 0.0;
+            array_test2[i] = 0.0;
+            array_test3[i] = 0.0;
         }
         for (Int_t i = 0; i< 4; i++) {            ///// set arrays equal to zero
             prefitPointX[i] = 0.0;
@@ -387,105 +402,168 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
             probplot -> Fill(prob);                                             ////fill prob plot of final fit
             
             sumresid = 0.0;                        /// set variables equal to zero
-            totsum = 0.0;                           /// set variables equal to zero
-            dxsum = 0.0;                            /// set variables equal to zero
             iter = 0;
-            
-             if(neweventhits3>7){
-            // if(prob >0.1){
-            for(Int_t i = 0; i < eventhits3; i++){
-                if(Riso[i] >=0.0 && Riso[i] <= 0.0052){
-                    iter++;
-                    el2->DrawArc(xpos[i],ypos[i],Riso[i]);    /////draw ischrones in the map with an if statement
-                    perpSlope = 0.0;
-                    perpYIntercept = 0.0;
-                    hitPosX = 0.0;
-                    hitPosY = 0.0;
-                    alpha = 0.0;
-                    chanDis = 0.0;
-                    chanDis2 = 0.0;
-                    residual = 0.0;
-                    position_y = 0.0;
-                    chanDis = distancefrompoint2line(xpos[i],ypos[i],newparam1,newparam0);//distance of track from wire
-                    chanDis2 = distancefrompoint2line2(xpos[i],ypos[i],newparam1,newparam0);//distance of track from wire
-                    residual = (chanDis-Riso[i]);
-                    sumresid += TMath::Abs(residual);
-                    distancefromwire->Fill(distancefrompoint2line2(xpos[i],ypos[i],newparam1,newparam0));
-                    distancefromisochrone->Fill(residual*1000);
-                    residual_vs_r->Fill(residual*1000,Riso[i]*1000);
-                    t0_vs_iso -> Fill(t03[i],distancefrompoint2line2(xpos[i],ypos[i],newparam1,newparam0));
-                    t0_vs_iso2 -> Fill(t03[i],chanDis);
-                    position_y = (newparam1*xpos[i] + newparam0);
-                    for (Int_t j =0; j<7; j++) {
-                        if(row3[i] == j){
-                            new_rt_layer[j]->Fill(t03[i],chanDis2*1000);
-                            new_rt_layer2[j]->Fill(t03[i],chanDis*1000);
-                            wire_per_layer[j]->Fill(chanDis2*1000);
-                            resid_per_layer[j]->Fill(residual*1000);
-                            if((position_y - ypos[i]) >= 0.0) {
-                                above_resid_per_layer[j]->Fill(residual*1000);
-                                above_wire_per_layer[j]->Fill(chanDis2*1000);
-                            }
-                            if((position_y - ypos[i]) < 0.0) {
-                                below_resid_per_layer[j]->Fill(residual*1000);
-                                below_wire_per_layer[j]->Fill(chanDis2*1000);
+            totsum = 0;
+            dxsum = 0;
+            totsum10 = 0;
+            dxsum10 = 0;
+            totsum20 = 0;
+            dxsum20 = 0;
+            totsum30 = 0;
+            dxsum30 = 0;
+            temp = 0;
+            truncate10 = 0;
+            truncate20 = 0;
+            truncate30 = 0;
+            iiter = 0;
+            if(neweventhits3>7){
+                // if(prob >0.1){
+                for(Int_t i = 0; i < eventhits3; i++){
+                    if(Riso[i] >=0.0 && Riso[i] <= 0.0052){
+                        el2->DrawArc(xpos[i],ypos[i],Riso[i]);    /////draw ischrones in the map with an if statement
+                        iiter++;
+                        perpSlope = 0.0;
+                        perpYIntercept = 0.0;
+                        hitPosX = 0.0;
+                        hitPosY = 0.0;
+                        alpha = 0.0;
+                        chanDis = 0.0;
+                        chanDis2 = 0.0;
+                        residual = 0.0;
+                        position_y = 0.0;
+                        chanDis = distancefrompoint2line(xpos[i],ypos[i],newparam1,newparam0);//distance of track from wire
+                        chanDis2 = distancefrompoint2line2(xpos[i],ypos[i],newparam1,newparam0);//distance of track from wire
+                        residual = (chanDis-Riso[i]);
+                        sumresid += TMath::Abs(residual);
+                        distancefromwire->Fill(distancefrompoint2line2(xpos[i],ypos[i],newparam1,newparam0));
+                        distancefromisochrone->Fill(residual*1000);
+                        residual_vs_r->Fill(residual*1000,Riso[i]*1000);
+                        t0_vs_iso -> Fill(t03[i],distancefrompoint2line2(xpos[i],ypos[i],newparam1,newparam0));
+                        t0_vs_iso2 -> Fill(t03[i],chanDis);
+                        position_y = (newparam1*xpos[i] + newparam0);
+                        for (Int_t j =0; j<7; j++) {
+                            if(row3[i] == j){
+                                new_rt_layer[j]->Fill(t03[i],chanDis2*1000);
+                                new_rt_layer2[j]->Fill(t03[i],chanDis*1000);
+                                wire_per_layer[j]->Fill(chanDis2*1000);
+                                resid_per_layer[j]->Fill(residual*1000);
+                                if((position_y - ypos[i]) >= 0.0) {
+                                    above_resid_per_layer[j]->Fill(residual*1000);
+                                    above_wire_per_layer[j]->Fill(chanDis2*1000);
+                                }
+                                if((position_y - ypos[i]) < 0.0) {
+                                    below_resid_per_layer[j]->Fill(residual*1000);
+                                    below_wire_per_layer[j]->Fill(chanDis2*1000);
+                                }
                             }
                         }
+                        wire_vs_channel->Fill(distancefrompoint2line2(xpos[i],ypos[i],newparam1,newparam0)*1000,channel3[i]);
+                        resid_vs_channel->Fill(residual*1000,channel3[i]);
+                        perpSlope = -1/newparam1;   //making track vertical
+                        perpYIntercept = ypos[i] - (perpSlope*xpos[i]); //find where track meets yposition
+                        hitPosX = (perpYIntercept - newparam0)/(newparam1-perpSlope);  //x position of the vertical point of the isochrone circle
+                        hitPosY = (hitPosX*newparam1)+newparam0;								//y position of the vertical point of the isochrone circle
+                        alpha = TMath::ACos(chanDis*1000/5.0);		//pythagoras theorem should replace this line
+                        dx[i] = 2*(5.0 * TMath::Sin(alpha));			//distance travelled in the tube
+                        if(dx[i]>0.0){
+                        totsum += tot3[i];
+                        dxsum += dx[i];
+                        array_test1[iter] = tot3[i];
+                        array_test2[iter] = dx[i];
+                        array_test3[iter] = tot3[i]/dx[i];
+                        //cout<< " totoverdx is " << array_test3[iter] << " tot is " << array_test1[iter] << " dx is " << array_test2[iter] << " iter is "<< iter << " i is " << i << endl;
+                        iter++;
+                        }
+                        if(Riso[i] <=0.00026) resid1->Fill(residual);
+                        if(Riso[i] > 0.00026 && Riso[i] <=0.00052) resid2->Fill(residual);
+                        if(Riso[i] > 0.00052 && Riso[i] <=0.00078) resid3->Fill(residual);
+                        if(Riso[i] > 0.00078 && Riso[i] <=0.00104) resid4->Fill(residual);
+                        if(Riso[i] > 0.00104 && Riso[i] <=0.00130) resid5->Fill(residual);
+                        if(Riso[i] > 0.00130 && Riso[i] <=0.00156) resid6->Fill(residual);
+                        if(Riso[i] > 0.00156 && Riso[i] <=0.00182) resid7->Fill(residual);
+                        if(Riso[i] > 0.00182 && Riso[i] <=0.00208) resid8->Fill(residual);
+                        if(Riso[i] > 0.00208 && Riso[i] <=0.00234) resid9->Fill(residual);
+                        if(Riso[i] > 0.00234 && Riso[i] <=0.00260) resid10->Fill(residual);
+                        if(Riso[i] > 0.00260 && Riso[i] <=0.00286) resid11->Fill(residual);
+                        if(Riso[i] > 0.00286 && Riso[i] <=0.00312) resid12->Fill(residual);
+                        if(Riso[i] > 0.00312 && Riso[i] <=0.00338) resid13->Fill(residual);
+                        if(Riso[i] > 0.00338 && Riso[i] <=0.00364) resid14->Fill(residual);
+                        if(Riso[i] > 0.00364 && Riso[i] <=0.00390) resid15->Fill(residual);
+                        if(Riso[i] > 0.00390 && Riso[i] <=0.00416) resid16->Fill(residual);
+                        if(Riso[i] > 0.00416 && Riso[i] <=0.00442) resid17->Fill(residual);
+                        if(Riso[i] > 0.00442 && Riso[i] <=0.00468) resid18->Fill(residual);
+                        if(Riso[i] > 0.00468 && Riso[i] <=0.00494) resid19->Fill(residual);
+                        if(Riso[i] > 0.00494 && Riso[i] <=0.00520) resid20->Fill(residual);
+                        
+                        for (Int_t j = 0; j< 150; j++) {
+                            if(channel3[i] == j){
+                                wire_per_channel[j]->Fill(chanDis2*1000);
+                                resid_per_channel[j]->Fill(residual*1000);             ////fill residual per channel
+                                rt_per_channel[j]->Fill(t03[i],chanDis2*1000);
+                                rt_per_channel2[j]->Fill(t03[i],chanDis*1000);
+                                if((position_y - ypos[i]) >= 0.0) {
+                                    above_resid_per_channel[j]->Fill(residual*1000);
+                                    above_wire_per_channel[j]->Fill(chanDis2*1000);
+                                }
+                                if((position_y - ypos[i]) < 0.0) {
+                                    below_resid_per_channel[j]->Fill(residual*1000);
+                                    below_wire_per_channel[j]->Fill(chanDis2*1000);
+                                }
+                            } // end if channel3[i] == j
+                        }   ///end if j for channels
+                    }       ///end if riso
+                    else continue;
+                }           ////end hits for loop
+                multiplicitycheck->Fill(iiter);
+                meanresiduals->Fill(sumresid*1000/iiter);
+                
+                //cout << " totsum is " << totsum << " dxsum is " << dxsum << " iter number is " << iter << endl;
+                //cout << "------------------------------------------------" << endl;
+                Int_t *index = new Int_t[iter];
+                TMath::Sort(iter,array_test3,index,kFALSE);
+                for (Int_t i = 0; i<iter; i++) {
+                       // cout<< " totoverdx is " << array_test3[index[i]] << " tot is " << array_test1[index[i]] << " dx is " << array_test2[index[i]] << " iter is " << i << " index is " << index[i] << endl;
+                }
+                //cout << "------------------------------------------------" << endl;
+
+                    truncate10 = 0.9*iter;
+                   // cout << " truncate10 is " << truncate10 << " iter number is "<< iter << endl;
+                    for(Int_t i = 0; i <truncate10; i++){
+                       // cout<< " totoverdx is " << array_test3[index[i]] << " tot is " << array_test1[index[i]] << " dx is " << array_test2[index[i]] << " iter is " << i << " index is " << index[i] << endl;
+                        totsum10 += array_test1[index[i]];
+                        dxsum10 += array_test2[index[i]];
                     }
-                    wire_vs_channel->Fill(distancefrompoint2line2(xpos[i],ypos[i],newparam1,newparam0)*1000,channel3[i]);
-                    resid_vs_channel->Fill(residual*1000,channel3[i]);
-                    perpSlope = -1/newparam1;   //making track vertical
-                    perpYIntercept = ypos[i] - (perpSlope*xpos[i]); //find where track meets yposition
-                    hitPosX = (perpYIntercept - newparam0)/(newparam1-perpSlope);  //x position of the vertical point of the isochrone circle
-                    hitPosY = (hitPosX*newparam1)+newparam0;								//y position of the vertical point of the isochrone circle
-                    alpha = TMath::ACos(chanDis*1000/5.0);		//pythagoras theorem should replace this line
-                    dx[i] = 2*(5.0 * TMath::Sin(alpha));			//distance travelled in the tube
-                    totsum += tot3[i];
-                    dxsum += dx[i];
-                    if(Riso[i] <=0.00026) resid1->Fill(residual);
-                    if(Riso[i] > 0.00026 && Riso[i] <=0.00052) resid2->Fill(residual);
-                    if(Riso[i] > 0.00052 && Riso[i] <=0.00078) resid3->Fill(residual);
-                    if(Riso[i] > 0.00078 && Riso[i] <=0.00104) resid4->Fill(residual);
-                    if(Riso[i] > 0.00104 && Riso[i] <=0.00130) resid5->Fill(residual);
-                    if(Riso[i] > 0.00130 && Riso[i] <=0.00156) resid6->Fill(residual);
-                    if(Riso[i] > 0.00156 && Riso[i] <=0.00182) resid7->Fill(residual);
-                    if(Riso[i] > 0.00182 && Riso[i] <=0.00208) resid8->Fill(residual);
-                    if(Riso[i] > 0.00208 && Riso[i] <=0.00234) resid9->Fill(residual);
-                    if(Riso[i] > 0.00234 && Riso[i] <=0.00260) resid10->Fill(residual);
-                    if(Riso[i] > 0.00260 && Riso[i] <=0.00286) resid11->Fill(residual);
-                    if(Riso[i] > 0.00286 && Riso[i] <=0.00312) resid12->Fill(residual);
-                    if(Riso[i] > 0.00312 && Riso[i] <=0.00338) resid13->Fill(residual);
-                    if(Riso[i] > 0.00338 && Riso[i] <=0.00364) resid14->Fill(residual);
-                    if(Riso[i] > 0.00364 && Riso[i] <=0.00390) resid15->Fill(residual);
-                    if(Riso[i] > 0.00390 && Riso[i] <=0.00416) resid16->Fill(residual);
-                    if(Riso[i] > 0.00416 && Riso[i] <=0.00442) resid17->Fill(residual);
-                    if(Riso[i] > 0.00442 && Riso[i] <=0.00468) resid18->Fill(residual);
-                    if(Riso[i] > 0.00468 && Riso[i] <=0.00494) resid19->Fill(residual);
-                    if(Riso[i] > 0.00494 && Riso[i] <=0.00520) resid20->Fill(residual);
-                    //cout << " channel is " << channel3[i] << " xpos is " << xpos[i] << " ypos is " << ypos[i] << " riso is " << Riso[i] << " new ypos is " << (newparam1*xpos[i] + newparam0) << endl;
-                    
-                    for (Int_t j = 0; j< 150; j++) {
-                        if(channel3[i] == j){
-                            wire_per_channel[j]->Fill(chanDis2*1000);
-                            resid_per_channel[j]->Fill(residual*1000);             ////fill residual per channel
-                            rt_per_channel[j]->Fill(t03[i],chanDis2*1000);
-                            rt_per_channel2[j]->Fill(t03[i],chanDis*1000);
-                            if((position_y - ypos[i]) >= 0.0) {
-                                above_resid_per_channel[j]->Fill(residual*1000);
-                                above_wire_per_channel[j]->Fill(chanDis2*1000);
-                            }
-                            if((position_y - ypos[i]) < 0.0) {
-                                below_resid_per_channel[j]->Fill(residual*1000);
-                                below_wire_per_channel[j]->Fill(chanDis2*1000);
-                            }
-                        } // end if channel3[i] == j
-                    }   ///end if j for channels
-                }       ///end if riso
-            }           ////end hits for loop
-             } //end if neweventhits3
-            multiplicitycheck->Fill(iter);
-            meanresiduals->Fill(sumresid*1000/iter);
-            totoverdx->Fill(totsum/dxsum);      ///fill tot/dx plot
+ 
+              //  cout << "------------------------------------------------" << endl;
+
+                    truncate20 = 0.8*iter;
+              //  cout << " truncate20 is " << truncate20 << " iter number is "<< iter << endl;
+                    for(Int_t i = 0; i < truncate20; i++){
+                   //     cout<< " totoverdx is " << array_test3[index[i]] << " tot is " << array_test1[index[i]] << " dx is " << array_test2[index[i]] << " iter is " << i << " index is " << index[i] << endl;
+                        totsum20 += array_test1[index[i]];
+                        dxsum20 += array_test2[index[i]];
+                    }
+                
+              //  cout << "------------------------------------------------" << endl;
+
+                    truncate30 = 0.7*iter;
+            //    cout << " truncate10 is " << truncate30 << " iter number is "<< iter << endl;
+                    for(Int_t i = 0; i < truncate30; i++){
+              //          cout<< " totoverdx is " << array_test3[index[i]] << " tot is " << array_test1[index[i]] << " dx is " << array_test2[index[i]] << " iter is " << i << " index is " << index[i] << endl;
+                        totsum30 += array_test1[index[i]];
+                        dxsum30 += array_test2[index[i]];
+                    }
+                
+                
+                tot_over_dx -> Fill(totsum/dxsum);
+                tot_over_dx_10 -> Fill(totsum10/dxsum10);
+                tot_over_dx_20 -> Fill(totsum20/dxsum20);
+                tot_over_dx_30 -> Fill(totsum30/dxsum30);
+            } //end if neweventhits3
+            
+            
+            
+            
             //  } ///end if prob
             // c1->Print("event_display.pdf"); /// ---------------> FILL OF THE PDF FILE !!!!!!!!!!!
             tree->Fill();
@@ -510,7 +588,7 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
         new_rt -> SetBinError(i,newerror);
     }
     new_rt->Fit("finalfit");
-    fstream out_Riso ("out_Riso_0.55GeV_dabc16117205401.txt", ofstream::out);    ////save parameters from riso calculation
+    fstream out_Riso ("out_Riso_2.95GeV_dabc16116172551.txt", ofstream::out);    ////save parameters from riso calculation
     for(Int_t i = 0; i < 5; i++){
         out_Riso << finalfit -> GetParameter(i) << endl;
     }
@@ -575,7 +653,6 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     distancefromwire->Write();
     distancefromisochrone->Write();
     meanresiduals->Write();
-    totoverdx->Write();
     residual_vs_r->Write();
     t0_vs_iso->Write();
     t0_vs_iso2->Write();
@@ -603,6 +680,10 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     resid19->Write();
     resid20->Write();
     iso_error->Write();
+    tot_over_dx -> Write();
+    tot_over_dx_10 -> Write();
+    tot_over_dx_20 -> Write();
+    tot_over_dx_30 -> Write();
     for (Int_t j = 0; j< 150; j++) {
         wire_per_channel[j]->Write();
         resid_per_channel[j]->Write();
