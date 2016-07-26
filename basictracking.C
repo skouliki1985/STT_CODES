@@ -30,7 +30,7 @@
 
 using namespace std;
 
-TString stra = "2.95GeV_dabc16116172551";                   //file which will contain the plots
+TString stra = "0.55GeV_dabc16117205401";                   //file which will contain the plots
 TString strb = ".root";                                     //file which will contain the plots
 TString strc = "_corr";                                     //file which will contain the plots
 TString strd = "_track";                                    //file which will contain the plots
@@ -70,6 +70,7 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     Double_t array_test1[150];
     Double_t array_test2[150];
     Double_t array_test3[150];
+    Int_t array_test4[150];
 
     
     
@@ -108,10 +109,16 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     TH1D* resid19 = new TH1D("resid19","resid19",1000,-0.001,0.001); // in meters
     TH1D* resid20 = new TH1D("resid20","resid20",1000,-0.001,0.001); // in meters
     TH1D* iso_error = new TH1D("iso_error","iso_error",20,0.,5.2);
-    TH1F* tot_over_dx = new TH1F("tot_over_dx","tot/dx",100,0.,100.);
-    TH1F* tot_over_dx_10 = new TH1F("tot_over_dx_10","tot/dx_10",100,0.,100.);
-    TH1F* tot_over_dx_20 = new TH1F("tot_over_dx_20","tot/dx_20",100,0.,100.);
-    TH1F* tot_over_dx_30 = new TH1F("tot_over_dx_30","tot/dx_30",100,0.,100.);
+    TH1D* tot_over_dx = new TH1D("tot_over_dx","tot/dx",100,0.,100.);
+    TH1D* tot_over_dx_10 = new TH1D("tot_over_dx_10","tot/dx_10",100,0.,100.);
+    TH1D* tot_over_dx_20 = new TH1D("tot_over_dx_20","tot/dx_20",100,0.,100.);
+    TH1D* tot_over_dx_30 = new TH1D("tot_over_dx_30","tot/dx_30",100,0.,100.);
+    TH2D* tot_over_dx_vs_chan = new TH2D("tot_over_dx_vs_chan","tot/dx_vs_chan",100,0.,100.,150,0.,150.);
+//    TH1D* tot = new TH1D("tot","tot",1000,0.,1000.);
+//    TH1D* tot_10 = new TH1D("tot_10","tot_10",1000,0.,1000.);
+//    TH1D* tot_20 = new TH1D("tot_20","tot_20",1000,0.,1000.);
+//    TH1D* tot_30 = new TH1D("tot_30","tot_30",1000,0.,1000.);
+//
     
     TH2D* wire_vs_channel = new TH2D("wire_vs_channel","wire_vs_channel",1400,-7.0,7.0,150,0.,150.);  ///in mm
     TH2D* resid_vs_channel = new TH2D("resid_vs_channel","resid_vs_channel",1000,-1.0,1.0,150,0.,150.);  //in mm
@@ -200,7 +207,7 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     
     
     ifstream polParamData;							     	//declare stream
-    polParamData.open("out_Riso_2.95GeV_dabc16116172551.txt");				//open riso txt file
+    polParamData.open("out_Riso_0.55GeV_dabc16117205401.txt");				//open riso txt file
     for(Int_t i = 0; i < 5; i++){
         polParamData >> polParam[i];                       //save in array values from riso txt file
     }
@@ -261,6 +268,7 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
             array_test1[i] = 0.0;
             array_test2[i] = 0.0;
             array_test3[i] = 0.0;
+            array_test4[i] = 0;
         }
         for (Int_t i = 0; i< 4; i++) {            ///// set arrays equal to zero
             prefitPointX[i] = 0.0;
@@ -471,7 +479,8 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
                         array_test1[iter] = tot3[i];
                         array_test2[iter] = dx[i];
                         array_test3[iter] = tot3[i]/dx[i];
-                        //cout<< " totoverdx is " << array_test3[iter] << " tot is " << array_test1[iter] << " dx is " << array_test2[iter] << " iter is "<< iter << " i is " << i << endl;
+                        array_test4[iter] = channel3[i];
+                       // cout<< " totoverdx is " << array_test3[iter] << " tot is " << array_test1[iter] << " dx is " << array_test2[iter] << " iter is "<< iter << " i is " << i << endl;
                         iter++;
                         }
                         if(Riso[i] <=0.00026) resid1->Fill(residual);
@@ -517,19 +526,22 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
                 multiplicitycheck->Fill(iiter);
                 meanresiduals->Fill(sumresid*1000/iiter);
                 
-                //cout << " totsum is " << totsum << " dxsum is " << dxsum << " iter number is " << iter << endl;
-                //cout << "------------------------------------------------" << endl;
+               // cout << " totsum is " << totsum << " dxsum is " << dxsum << " iter number is " << iter << endl;
+               // cout << "------------------------------------------------" << endl;
                 Int_t *index = new Int_t[iter];
-                TMath::Sort(iter,array_test3,index,kFALSE);
+                TMath::Sort(iter,array_test3,index,kFALSE); //////sort the totoverdx values
+               // TMath::Sort(iter,array_test1,index,kFALSE); //////sort the totoverdx values
+                
                 for (Int_t i = 0; i<iter; i++) {
-                       // cout<< " totoverdx is " << array_test3[index[i]] << " tot is " << array_test1[index[i]] << " dx is " << array_test2[index[i]] << " iter is " << i << " index is " << index[i] << endl;
+                   // cout<< " totoverdx is " << array_test3[index[i]] << " tot is " << array_test1[index[i]] << " dx is " << array_test2[index[i]] << " iter is " << i << " index is " << index[i] << endl;
+                    tot_over_dx_vs_chan->Fill(array_test3[index[i]],array_test4[index[i]]);
                 }
-                //cout << "------------------------------------------------" << endl;
-
+//                cout << "------------------------------------------------" << endl;
+//
                     truncate10 = 0.9*iter;
-                   // cout << " truncate10 is " << truncate10 << " iter number is "<< iter << endl;
+                    //cout << " truncate10 is " << truncate10 << " iter number is "<< iter << endl;
                     for(Int_t i = 0; i <truncate10; i++){
-                       // cout<< " totoverdx is " << array_test3[index[i]] << " tot is " << array_test1[index[i]] << " dx is " << array_test2[index[i]] << " iter is " << i << " index is " << index[i] << endl;
+                      //  cout<< " totoverdx is " << array_test3[index[i]] << " tot is " << array_test1[index[i]] << " dx is " << array_test2[index[i]] << " iter is " << i << " index is " << index[i] << endl;
                         totsum10 += array_test1[index[i]];
                         dxsum10 += array_test2[index[i]];
                     }
@@ -559,6 +571,11 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
                 tot_over_dx_10 -> Fill(totsum10/dxsum10);
                 tot_over_dx_20 -> Fill(totsum20/dxsum20);
                 tot_over_dx_30 -> Fill(totsum30/dxsum30);
+//                  tot -> Fill(totsum/iter);
+//                  tot_10 -> Fill(totsum10/truncate10);
+//                  tot_20 -> Fill(totsum20/truncate20);
+//                  tot_30 -> Fill(totsum30/truncate30);
+//
             } //end if neweventhits3
             
             
@@ -588,7 +605,7 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
         new_rt -> SetBinError(i,newerror);
     }
     new_rt->Fit("finalfit");
-    fstream out_Riso ("out_Riso_2.95GeV_dabc16116172551.txt", ofstream::out);    ////save parameters from riso calculation
+    fstream out_Riso ("out_Riso_0.55GeV_dabc16117205401.txt", ofstream::out);    ////save parameters from riso calculation
     for(Int_t i = 0; i < 5; i++){
         out_Riso << finalfit -> GetParameter(i) << endl;
     }
@@ -684,6 +701,11 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     tot_over_dx_10 -> Write();
     tot_over_dx_20 -> Write();
     tot_over_dx_30 -> Write();
+    tot_over_dx_vs_chan -> Write();
+//    tot -> Write();
+//    tot_10 -> Write();
+//    tot_20 -> Write();
+//    tot_30 -> Write();
     for (Int_t j = 0; j< 150; j++) {
         wire_per_channel[j]->Write();
         resid_per_channel[j]->Write();
