@@ -43,7 +43,7 @@ Double_t newparam0,newparam1,dnewparam0,dnewparam1;
 Double_t chisq = -9999.0,result = -9999.0;
 Double_t Riso[150],sigma[150],xpos[150],ypos[150];
 Double_t par[6];
-
+Int_t efficiency = 0;
 
 // ***************** FUNCTIONS USED ********************************
 void minuitfcn (Int_t& npar, Double_t* gin, Double_t& f, Double_t* par, Int_t iflag);
@@ -79,7 +79,6 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     TH1I* multiplicity1 = new TH1I("multiplicity1","multiplicity1",50,0,50);
     TH1I* multiplicity2 = new TH1I("multiplicity2","multiplicity2",50,0,50);
     TH1I* multiplicity3 = new TH1I("multiplicity3","multiplicity3",50,0,50);
-    TH1I* multiplicitycheck = new TH1I("multiplicitycheck","multiplicitycheck",50,0,50);
     TH1D* chisqplot = new TH1D("chisqplot","chisqplot",500,0.,50.);
     TH1D* probplot = new TH1D("probplot","probplot",500,0.,1.);
     TH1D* distancefromwire = new TH1D("distancefromwire","distancefromwire",1200,-6.,6.); ///in mm
@@ -283,10 +282,21 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
         if(a =="y" || a == "a"){    //// start of the if a || y statement !!!!!!!!!!!!!!!
             plot->Draw();
             for(Int_t i = 0; i < eventhits3; i++){        ///start of hits loop per event
-                //Riso[i] = (polParam[0]+(polParam[1]*t03[i])+(polParam[2]*pow(t03[i],2))+(polParam[3]*pow(t03[i],3))+(polParam[4]*pow(t03[i],4)));           ///////riso is in meters!!!!!!!!!
-                Riso[i] = (-0.000105091+(5.42992e-05*t03[i])+(5.58724e-08*pow(t03[i],2))+(-2.60983e-09*pow(t03[i],3))+(9.13256e-12*pow(t03[i],4)));           ///////riso is in meters!!!!!!!!!
+//                Riso[i] = (polParam[0]+(polParam[1]*t03[i])+(polParam[2]*pow(t03[i],2))+(polParam[3]*pow(t03[i],3))+(polParam[4]*pow(t03[i],4)));           ///////riso is in meters!!!!!!!!!
+                Riso[i] = (-0.000105193+(5.42971e-05*t03[i])+(5.60904e-08*pow(t03[i],2))+(-2.61307e-09*pow(t03[i],3))+(9.14629e-12*pow(t03[i],4)));           ///////--- 0.55GEV 3th iter ----!!!!!!!!!
+//               Riso[i] = (-9.81842e-05+(5.16247e-05*t03[i])+(9.41052e-08*pow(t03[i],2))+(-2.69466e-09*pow(t03[i],3))+(8.64587e-12*pow(t03[i],4)));           ///////--- 0.75GEV 3th iter ----!!!!!!!!!
+//                Riso[i] = (-5.98299e-05+(4.68148e-05*t03[i])+(2.19203e-07*pow(t03[i],2))+(-3.82782e-09*pow(t03[i],3))+(1.21212e-11*pow(t03[i],4)));           ///////--- 1.00GEV 3th iter ----!!!!!!!!!
+//                Riso[i] = (-4.44703e-05+(3.8116e-05*t03[i])+(4.09633e-07*pow(t03[i],2))+(-5.34765e-09*pow(t03[i],3))+(1.61261e-11*pow(t03[i],4)));           ///////--- 2.95GEV 3th iter ----!!!!!!!!!
+
+
                 if(Riso[i] <0.0 && Riso[i] > 0.00035) Riso[i] = 0.000025;
-                sigma[i] = (0.000189633 + 2.42154e-05*Riso[i] - 5.96517e-06*Riso[i]*Riso[i]);
+                sigma[i] = (0.000194801 + 2.05829e-05*Riso[i] - 5.55325e-06*Riso[i]*Riso[i]);    ///////--- 0.55GEV 3th iter ----!!!!!!!!!
+//               sigma[i] = (0.000205492 + 2.97296e-05*Riso[i] - 7.827e-06*Riso[i]*Riso[i]);    ///////--- 0.75GEV 3th iter ----!!!!!!!!!
+//                sigma[i] = (0.000209139 + 3.11057e-05*Riso[i] - 8.39536e-06*Riso[i]*Riso[i]);    ///////--- 1.00GEV 3th iter ----!!!!!!!!!
+//                sigma[i] = (0.000227515 + 5.70789e-05*Riso[i] - 9.32539e-06*Riso[i]*Riso[i]);    ///////--- 2.95GEV 3th iter ----!!!!!!!!!
+                
+
+
                 risos->Fill(Riso[i]*1000);
                 xpos[i] = xposition3[i];
                 ypos[i] = yposition3[i];
@@ -425,7 +435,8 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
             truncate30 = 0;
             iiter = 0;
             if(neweventhits3>7){
-                // if(prob >0.1){
+                 if(prob >0.1){
+                     efficiency++;
                 for(Int_t i = 0; i < eventhits3; i++){
                     if(Riso[i] >=0.0 && Riso[i] <= 0.0052){
                         el2->DrawArc(xpos[i],ypos[i],Riso[i]);    /////draw ischrones in the map with an if statement
@@ -523,7 +534,6 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
                     }       ///end if riso
                     else continue;
                 }           ////end hits for loop
-                multiplicitycheck->Fill(iiter);
                 meanresiduals->Fill(sumresid*1000/iiter);
                 
                // cout << " totsum is " << totsum << " dxsum is " << dxsum << " iter number is " << iter << endl;
@@ -576,18 +586,16 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
 //                  tot_20 -> Fill(totsum20/truncate20);
 //                  tot_30 -> Fill(totsum30/truncate30);
 //
+                 } ///end if prob
             } //end if neweventhits3
             
-            
-            
-            
-            //  } ///end if prob
             // c1->Print("event_display.pdf"); /// ---------------> FILL OF THE PDF FILE !!!!!!!!!!!
             tree->Fill();
         } // end of if a || y statement !!!!!!!!!!!!
         else break;
     }			//// END OF BIG FOR LOOP FOR EVENTS !!!!!!!!!!!!!
     
+    cout << " efficiency is " << efficiency << endl;
     Double_t newmean = 0.0;
     Double_t newerror = 0.0;
     
@@ -600,7 +608,7 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
         proj_y_rt -> Fit("total");
         newmean = (par[4]+TMath::Abs(par[1]))/2;
         newerror = (par[5]+par[2])/2;
-        cout << " new mean is " << newmean << " new error is " << newerror << endl;
+       //cout << " new mean is " << newmean << " new error is " << newerror << endl;
         new_rt -> SetBinContent(i,newmean);
         new_rt -> SetBinError(i,newerror);
     }
@@ -664,7 +672,6 @@ void basictracking::track()				//START OF MAIN FUNCTION TRACK -->TRACK()!!!!!!!!
     multiplicity1->Write();
     multiplicity2->Write();
     multiplicity3->Write();
-    multiplicitycheck->Write();
     chisqplot->Write();
     probplot->Write();
     distancefromwire->Write();
@@ -748,8 +755,8 @@ void minuitfcn (Int_t& npar, Double_t* gin, Double_t& f, Double_t* par, Int_t if
             it++;
             dis = distancefrompoint2line (xpos[i],ypos[i],bb,aa);
             resid = residual(dis,Riso[i]);
-            //chisq += (resid*resid)/(sigma[i]*sigma[i]);
-            chisq += (resid*resid)/(0.000200*0.000200);
+            chisq += (resid*resid)/(sigma[i]*sigma[i]);
+            //chisq += (resid*resid)/(0.000150*0.000150);
         }//riso if
     }//hits loop
     f = chisq/(Double_t(it));
@@ -817,8 +824,8 @@ Double_t* line(Double_t& x1, Double_t& x2,Double_t& y1,Double_t& y2){
             it++;
             dis = distancefrompoint2line (xpos[i],ypos[i],aa[1],aa[0]);
             resid = residual(dis,Riso[i]);
-            //chisq += (resid*resid)/(sigma[i]*sigma[i]);
-            chisq += (resid*resid)/(0.000200*0.000200);
+            chisq += (resid*resid)/(sigma[i]*sigma[i]);
+            //chisq += (resid*resid)/(0.000150*0.000150);
         } //riso if
     } //hits loop
     aa[2] = chisq/(Double_t(it-2));
